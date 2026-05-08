@@ -365,13 +365,53 @@ async def get_users():
 class CreateUserRequest(BaseModel):
     email: str
     password: str
+
     name: str
     surname: str = ""
     dni: str = ""
+
+    phone: str = ""
+    address: str = ""
+    profile_photo_url: str = ""
+    social_security_number: str = ""
+
     role: str = "worker"
     company_id: str = ""
     workplace_id: str = ""
+    department: str = ""
+    job_category: str = ""
+    active: bool = True
+
+    contract_type: str = ""
+    contract_start_date: str = ""
+    contract_end_date: str = ""
+
     weekly_hours: float = 40
+    base_salary: float = 0
+    salary_type: str = "monthly"
+
+    hourly_rate: float = 0
+    overtime_rate: float = 0
+    holiday_rate: float = 0
+
+    iban: str = ""
+    tax_withholding_percent: float = 0
+    social_security_group: str = ""
+    collective_agreement: str = ""
+    extra_payments: int = 12
+
+    overtime_hours: float = 0
+    holiday_hours: float = 0
+    night_hours: float = 0
+
+    bonus_amount: float = 0
+    deductions_amount: float = 0
+
+    expected_hours: float = 0
+    absence_hours: float = 0
+
+    vacation_days: float = 0
+    sick_leave_days: float = 0
 
 
 @router.post("/users")
@@ -411,14 +451,54 @@ async def create_user(data: CreateUserRequest):
     user = {
         "email": email,
         "password": data.password,
+
         "name": data.name.strip(),
         "surname": data.surname.strip(),
         "dni": dni,
+
+        "phone": data.phone.strip(),
+        "address": data.address.strip(),
+        "profile_photo_url": data.profile_photo_url.strip(),
+        "social_security_number": data.social_security_number.strip(),
+
         "role": data.role,
         "company_id": data.company_id,
         "workplace_id": data.workplace_id,
+        "department": data.department.strip(),
+        "job_category": data.job_category.strip(),
+        "active": data.active,
+
+        "contract_type": data.contract_type.strip(),
+        "contract_start_date": data.contract_start_date.strip(),
+        "contract_end_date": data.contract_end_date.strip(),
+
         "weekly_hours": data.weekly_hours,
-        "active": True,
+        "base_salary": data.base_salary,
+        "salary_type": data.salary_type,
+
+        "hourly_rate": data.hourly_rate,
+        "overtime_rate": data.overtime_rate,
+        "holiday_rate": data.holiday_rate,
+
+        "iban": data.iban.strip(),
+        "tax_withholding_percent": data.tax_withholding_percent,
+        "social_security_group": data.social_security_group.strip(),
+        "collective_agreement": data.collective_agreement.strip(),
+        "extra_payments": data.extra_payments,
+
+        "overtime_hours": data.overtime_hours,
+        "holiday_hours": data.holiday_hours,
+        "night_hours": data.night_hours,
+
+        "bonus_amount": data.bonus_amount,
+        "deductions_amount": data.deductions_amount,
+
+        "expected_hours": data.expected_hours,
+        "absence_hours": data.absence_hours,
+
+        "vacation_days": data.vacation_days,
+        "sick_leave_days": data.sick_leave_days,
+
         "created_at": datetime.utcnow().isoformat(),
     }
 
