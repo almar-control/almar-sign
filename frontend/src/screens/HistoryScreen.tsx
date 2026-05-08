@@ -5,10 +5,24 @@ import {
   FlatList,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 
+import type {
+  NativeStackScreenProps,
+} from "@react-navigation/native-stack";
+
+import type {
+  RootStackParamList,
+} from "../navigation/AppNavigator";
+
 import { getRecords } from "../api/client";
+
+type Props = NativeStackScreenProps<
+  RootStackParamList,
+  "History"
+>;
 
 type RecordItem = {
   id: string;
@@ -17,9 +31,14 @@ type RecordItem = {
   status: string;
 };
 
-export default function HistoryScreen() {
-  const [records, setRecords] = useState<RecordItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function HistoryScreen({
+  navigation,
+}: Props) {
+  const [records, setRecords] =
+    useState<RecordItem[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     loadRecords();
@@ -74,6 +93,17 @@ export default function HistoryScreen() {
           </View>
         )}
       />
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() =>
+          navigation.goBack()
+        }
+      >
+        <Text style={styles.buttonText}>
+          Volver
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -123,5 +153,17 @@ const styles = StyleSheet.create({
   status: {
     color: "#7ED957",
   },
-});
 
+  button: {
+    backgroundColor: "#B07A4F",
+    padding: 16,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 24,
+  },
+
+  buttonText: {
+    color: "#0A0A0A",
+    fontWeight: "700",
+  },
+});
