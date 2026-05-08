@@ -94,11 +94,17 @@ async def get_hours(email: str):
 
 @router.get("/workers")
 async def get_workers():
-    emails = await db.records.distinct("email")
+    cursor = (
+        db.users
+        .find({"active": True})
+        .sort("email", 1)
+    )
 
     workers = []
 
-    for email in sorted(emails):
+    async for user in cursor:
+        email = user.get("email", "")
+
         last_record = await db.records.find_one(
             {"email": email},
             sort=[("created_at", -1)]
@@ -106,6 +112,11 @@ async def get_workers():
 
         workers.append({
             "email": email,
+            "name": user.get("name", ""),
+            "role": user.get("role", ""),
+            "company_id": user.get("company_id", ""),
+            "workplace_id": user.get("workplace_id", ""),
+            "weekly_hours": user.get("weekly_hours", 0),
             "hours": await calculate_hours(email),
             "last_record": serialize_record(last_record) if last_record else None
         })

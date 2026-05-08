@@ -38,6 +38,10 @@ type Summary = {
 type WorkerItem = {
   email: string;
   hours: number;
+  weekly_hours?: number;
+  role?: string;
+  company_id?: string;
+  workplace_id?: string;
   last_record: RecordItem | null;
 };
 
@@ -139,7 +143,13 @@ export default function AdminScreen({ navigation }: Props) {
             <View style={styles.workerCard}>
               <Text style={styles.email}>{item.email}</Text>
 
-              <Text style={styles.hours}>{item.hours} h acumuladas</Text>
+              <Text style={styles.hours}>
+                {item.hours} h acumuladas
+              </Text>
+
+              <Text style={styles.contract}>
+                Contrato: {item.weekly_hours || 0} h/semana
+              </Text>
 
               <Text style={styles.type}>
                 Último fichaje: {formatRecordType(item.last_record?.type)}
@@ -251,6 +261,12 @@ const styles = StyleSheet.create({
   hours: {
     color: "#7ED957",
     fontWeight: "700",
+    marginBottom: 8,
+  },
+
+  contract: {
+    color: "#F3F0EA",
+    opacity: 0.8,
     marginBottom: 8,
   },
 
