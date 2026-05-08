@@ -91,9 +91,8 @@ export async function getGpsSettings() {
 
   return response.json();
 }
-export async function getHours(
-  email: string
-) {
+
+export async function getHours(email: string) {
   const response = await fetch(
     `${API_BASE_URL}/admin/hours/${email}`
   );
@@ -107,3 +106,16 @@ export async function getHours(
   return response.json();
 }
 
+export async function getWorkers() {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/workers`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "No se pudieron cargar trabajadores"
+    );
+  }
+
+  return response.json();
+}
