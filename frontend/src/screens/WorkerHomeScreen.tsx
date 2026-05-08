@@ -11,6 +11,7 @@ import * as Location from "expo-location";
 import { getDistance } from "geolib";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { checkIn, checkOut, getGpsSettings, getHours } from "../api/client";
 
 type Props = NativeStackScreenProps<RootStackParamList, "WorkerHome">;
@@ -164,7 +165,9 @@ export default function WorkerHomeScreen({ navigation, route }: Props) {
     }
   }
 
-  function logout() {
+  async function logout() {
+    await AsyncStorage.removeItem("user_email");
+    await AsyncStorage.removeItem("user_role");
     navigation.replace("Login");
   }
 

@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { getWorkers } from "../api/client";
@@ -88,6 +89,12 @@ export default function AdminScreen({ navigation }: Props) {
     return new Date(timestamp).toLocaleString();
   }
 
+  async function logout() {
+    await AsyncStorage.removeItem("user_email");
+    await AsyncStorage.removeItem("user_role");
+    navigation.replace("Login");
+  }
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -151,7 +158,7 @@ export default function AdminScreen({ navigation }: Props) {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.replace("Login")}
+        onPress={logout}
       >
         <Text style={styles.buttonText}>Volver al login</Text>
       </TouchableOpacity>
