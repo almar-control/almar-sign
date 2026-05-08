@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Linking,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -51,8 +53,27 @@ export default function AdminScreen({ navigation }: Props) {
       setRecords(recordsData.records || []);
     } catch (error) {
       console.log(error);
+      Alert.alert("Error", "No se pudo cargar el panel admin");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function openCsvExport() {
+    const url = `${API_BASE_URL}/admin/export.csv`;
+
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+
+      if (!canOpen) {
+        Alert.alert("CSV", "No se puede abrir el enlace de exportación");
+        return;
+      }
+
+      await Linking.openURL(url);
+    } catch (error) {
+      console.log(error);
+      Alert.alert("CSV", "No se pudo abrir el CSV");
     }
   }
 
@@ -85,6 +106,10 @@ export default function AdminScreen({ navigation }: Props) {
         </View>
       </View>
 
+      <TouchableOpacity style={styles.exportButton} onPress={openCsvExport}>
+        <Text style={styles.exportButtonText}>Exportar CSV</Text>
+      </TouchableOpacity>
+
       <Text style={styles.sectionTitle}>Últimos registros</Text>
 
       <FlatList
@@ -93,13 +118,20 @@ export default function AdminScreen({ navigation }: Props) {
         renderItem={({ item }) => (
           <View style={styles.recordCard}>
             <Text style={styles.email}>{item.email}</Text>
-            <Text style={styles.type}>{item.type === "in" ? "ENTRADA" : "SALIDA"}</Text>
-            <Text style={styles.date}>{new Date(item.timestamp).toLocaleString()}</Text>
+            <Text style={styles.type}>
+              {item.type === "in" ? "ENTRADA" : "SALIDA"}
+            </Text>
+            <Text style={styles.date}>
+              {new Date(item.timestamp).toLocaleString()}
+            </Text>
           </View>
         )}
       />
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("WorkerHome")}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate("WorkerHome")}
+      >
         <Text style={styles.buttonText}>Volver</Text>
       </TouchableOpacity>
     </View>
@@ -130,7 +162,7 @@ const styles = StyleSheet.create({
 
   grid: {
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 16,
   },
 
   statCard: {
@@ -150,6 +182,19 @@ const styles = StyleSheet.create({
   value: {
     color: "#F3F0EA",
     fontSize: 24,
+    fontWeight: "700",
+  },
+
+  exportButton: {
+    backgroundColor: "#F3F0EA",
+    padding: 16,
+    borderRadius: 14,
+    alignItems: "center",
+    marginBottom: 24,
+  },
+
+  exportButtonText: {
+    color: "#0A0A0A",
     fontWeight: "700",
   },
 
