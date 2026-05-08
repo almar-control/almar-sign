@@ -11,6 +11,15 @@ from app.core.database import db
 router = APIRouter()
 
 
+
+class CreateWorkplaceRequest(BaseModel):
+    company_id: str
+    name: str
+    latitude: float
+    longitude: float
+    radius_meters: int = 100
+
+
 class CreateCompanyRequest(BaseModel):
     name: str
     tax_id: str = ""
@@ -227,3 +236,54 @@ async def export_records_csv():
             "Content-Disposition": f"attachment; filename={filename}"
         },
     )
+
+
+@router.get("/workplaces")
+async def get_workplaces():
+    cursor = (
+        db.workplaces
+        .find()
+        .sort("name", 1)
+    )
+
+    workplaces = []
+
+    async for workplace in cursor:
+        workplace["id"] = str(workplace["_id"])
+        del workplace["_id"]
+        workplaces.append(workplace)
+
+    return {
+        "workplaces": workplaces
+    }
+
+
+@router.post("/workplaces")
+async def create_workplace(data: CreateWorkplaceRequest):
+    existing = await db.workplaces.find_one({
+        "name": data.name
+    })
+
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail="Centro ya existe"
+        )
+
+    workplace = {
+        "company_id": data.company_id,
+        "name": data.name,
+        "latitude": data.latitude,
+        "longitude": data.longitude,
+        "radius_meters": data.radius_meters,
+        "active": True,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+
+    result = await db.workplaces.insert_one(workplace)
+
+    return {
+        "success": True,
+        "id": str(result.inserted_id),
+        "name": data.name
+    }
