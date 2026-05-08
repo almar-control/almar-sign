@@ -31,5 +31,8 @@ async def login(data: LoginRequest):
         "success": True,
         "role": user["role"],
         "email": user["email"],
-        "name": user.get("name", "")
+        "name": user.get("name", ""),
+        "company_id": user.get("company_id", ""),
+        "workplace_id": user.get("workplace_id", ""),
+        "weekly_hours": user.get("weekly_hours", 0),
     }
