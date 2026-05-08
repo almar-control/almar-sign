@@ -16,27 +16,7 @@ def serialize_record(record):
     return record
 
 
-@router.get("/records")
-async def get_all_records():
-    cursor = (
-        db.records
-        .find()
-        .sort("created_at", -1)
-        .limit(200)
-    )
-
-    records = []
-
-    async for record in cursor:
-        records.append(serialize_record(record))
-
-    return {
-        "records": records
-    }
-
-
-@router.get("/hours/{email}")
-async def get_hours(email: str):
+async def calculate_hours(email: str):
     cursor = (
         db.records
         .find({"email": email})
@@ -60,9 +40,57 @@ async def get_hours(email: str):
             total_seconds += (current_out - current_in).total_seconds()
             current_in = None
 
+    return round(total_seconds / 3600, 2)
+
+
+@router.get("/records")
+async def get_all_records():
+    cursor = (
+        db.records
+        .find()
+        .sort("created_at", -1)
+        .limit(200)
+    )
+
+    records = []
+
+    async for record in cursor:
+        records.append(serialize_record(record))
+
+    return {
+        "records": records
+    }
+
+
+@router.get("/hours/{email}")
+async def get_hours(email: str):
     return {
         "email": email,
-        "hours": round(total_seconds / 3600, 2)
+        "hours": await calculate_hours(email)
+    }
+
+
+@router.get("/workers")
+async def get_workers():
+    emails = await db.records.distinct("email")
+
+    workers = []
+
+    for email in sorted(emails):
+        last_record = await db.records.find_one(
+            {"email": email},
+            sort=[("created_at", -1)]
+        )
+
+        workers.append({
+            "email": email,
+            "hours": await calculate_hours(email),
+            "last_record": serialize_record(last_record) if last_record else None
+        })
+
+    return {
+        "workers": workers,
+        "total_workers": len(workers)
     }
 
 
@@ -75,12 +103,17 @@ async def get_admin_summary():
         sort=[("created_at", -1)]
     )
 
-    worker_hours = await get_hours("worker@almar.com")
+    emails = await db.records.distinct("email")
+
+    total_hours = 0
+
+    for email in emails:
+        total_hours += await calculate_hours(email)
 
     return {
         "total_records": total_records,
-        "active_workers": 1,
-        "worker_hours": worker_hours["hours"],
+        "active_workers": len(emails),
+        "worker_hours": round(total_hours, 2),
         "last_record": serialize_record(last_record) if last_record else None
     }
 
