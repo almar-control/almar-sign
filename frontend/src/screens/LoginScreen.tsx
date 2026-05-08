@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
+  Image,
 } from "react-native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -51,6 +52,12 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
+      <Image
+        source={require("../../assets/logo_negro.png")}
+        style={styles.logo}
+        resizeMode="contain"
+      />
+
       <Text style={styles.title}>Acceso</Text>
 
       <TextInput
@@ -102,6 +109,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#0A0A0A",
     justifyContent: "center",
     padding: 24,
+  },
+
+  logo: {
+    width: 1800,
+    height: 260,
+    alignSelf: "center",
+    marginBottom: -40,
+    marginTop: -60,
   },
 
   title: {
