@@ -1,36 +1,25 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app.core.database import db
+
 router = APIRouter()
+
 
 class LoginRequest(BaseModel):
     email: str
     password: str
 
+
 @router.post("/login")
 async def login(data: LoginRequest):
+    email = data.email.strip().lower()
 
-    users = [
-        {
-            "email": "admin@almar.com",
-            "password": "123456",
-            "role": "admin"
-        },
-        {
-            "email": "worker@almar.com",
-            "password": "123456",
-            "role": "worker"
-        }
-    ]
-
-    user = next(
-        (
-            u for u in users
-            if u["email"] == data.email
-            and u["password"] == data.password
-        ),
-        None
-    )
+    user = await db.users.find_one({
+        "email": email,
+        "password": data.password,
+        "active": True,
+    })
 
     if not user:
         raise HTTPException(
@@ -41,6 +30,6 @@ async def login(data: LoginRequest):
     return {
         "success": True,
         "role": user["role"],
-        "email": user["email"]
+        "email": user["email"],
+        "name": user.get("name", "")
     }
-
