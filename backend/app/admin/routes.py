@@ -20,6 +20,13 @@ class CreateWorkplaceRequest(BaseModel):
     radius_meters: int = 100
 
 
+
+class UpdateUserContractRequest(BaseModel):
+    weekly_hours: float
+    company_id: str = ""
+    workplace_id: str = ""
+
+
 class CreateCompanyRequest(BaseModel):
     name: str
     tax_id: str = ""
@@ -286,4 +293,39 @@ async def create_workplace(data: CreateWorkplaceRequest):
         "success": True,
         "id": str(result.inserted_id),
         "name": data.name
+    }
+
+
+@router.patch("/users/{email}/contract")
+async def update_user_contract(email: str, data: UpdateUserContractRequest):
+    clean_email = email.strip().lower()
+
+    update_data = {
+        "weekly_hours": data.weekly_hours,
+        "updated_at": datetime.utcnow().isoformat(),
+    }
+
+    if data.company_id:
+        update_data["company_id"] = data.company_id
+
+    if data.workplace_id:
+        update_data["workplace_id"] = data.workplace_id
+
+    result = await db.users.update_one(
+        {"email": clean_email},
+        {"$set": update_data}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Usuario no encontrado"
+        )
+
+    return {
+        "success": True,
+        "email": clean_email,
+        "weekly_hours": data.weekly_hours,
+        "company_id": data.company_id,
+        "workplace_id": data.workplace_id,
     }
