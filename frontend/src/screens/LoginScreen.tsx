@@ -18,8 +18,8 @@ import { login } from "../api/client";
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 
 export default function LoginScreen({ navigation }: Props) {
-  const [email, setEmail] = useState("worker@almar.com");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -85,14 +85,6 @@ export default function LoginScreen({ navigation }: Props) {
           <Text style={styles.buttonText}>Entrar</Text>
         )}
       </TouchableOpacity>
-
-      <Text style={styles.hint}>
-        Demo: worker@almar.com / 123456
-      </Text>
-
-      <Text style={styles.hint}>
-        Admin: admin@almar.com / 123456
-      </Text>
     </View>
   );
 }
