@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -15,7 +16,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
-import { getWorkers } from "../api/client";
+import { getWorkers, updateUserContract } from "../api/client";
 
 const API_BASE_URL = "http://192.168.1.37:8000";
 
@@ -48,6 +49,7 @@ type WorkerItem = {
 export default function AdminScreen({ navigation }: Props) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [workers, setWorkers] = useState<WorkerItem[]>([]);
+  const [contractDrafts, setContractDrafts] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -60,14 +62,41 @@ export default function AdminScreen({ navigation }: Props) {
       const summaryData = await summaryResponse.json();
 
       const workersData = await getWorkers();
+      const loadedWorkers = workersData.workers || [];
+
+      const drafts: Record<string, string> = {};
+
+      loadedWorkers.forEach((worker: WorkerItem) => {
+        drafts[worker.email] = String(worker.weekly_hours || 0);
+      });
 
       setSummary(summaryData);
-      setWorkers(workersData.workers || []);
+      setWorkers(loadedWorkers);
+      setContractDrafts(drafts);
     } catch (error) {
       console.log(error);
       Alert.alert("Error", "No se pudo cargar el panel admin");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function saveContract(email: string) {
+    try {
+      const value = Number(contractDrafts[email]);
+
+      if (Number.isNaN(value) || value < 0) {
+        Alert.alert("Contrato", "Introduce horas válidas");
+        return;
+      }
+
+      await updateUserContract(email, value);
+      await loadAdmin();
+
+      Alert.alert("Contrato actualizado", `${email}: ${value} h/semana`);
+    } catch (error) {
+      console.log(error);
+      Alert.alert("Error", "No se pudo actualizar el contrato");
     }
   }
 
@@ -147,9 +176,28 @@ export default function AdminScreen({ navigation }: Props) {
                 {item.hours} h acumuladas
               </Text>
 
-              <Text style={styles.contract}>
-                Contrato: {item.weekly_hours || 0} h/semana
-              </Text>
+              <Text style={styles.contract}>Contrato h/semana</Text>
+
+              <View style={styles.contractRow}>
+                <TextInput
+                  style={styles.contractInput}
+                  keyboardType="decimal-pad"
+                  value={contractDrafts[item.email] || ""}
+                  onChangeText={(value) =>
+                    setContractDrafts({
+                      ...contractDrafts,
+                      [item.email]: value.replace(",", "."),
+                    })
+                  }
+                />
+
+                <TouchableOpacity
+                  style={styles.saveButton}
+                  onPress={() => saveContract(item.email)}
+                >
+                  <Text style={styles.saveButtonText}>Guardar</Text>
+                </TouchableOpacity>
+              </View>
 
               <Text style={styles.type}>
                 Último fichaje: {formatRecordType(item.last_record?.type)}
@@ -268,6 +316,34 @@ const styles = StyleSheet.create({
     color: "#F3F0EA",
     opacity: 0.8,
     marginBottom: 8,
+  },
+
+  contractRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+  },
+
+  contractInput: {
+    flex: 1,
+    backgroundColor: "#0A0A0A",
+    borderColor: "#B07A4F",
+    borderWidth: 1,
+    borderRadius: 10,
+    color: "#F3F0EA",
+    padding: 12,
+  },
+
+  saveButton: {
+    backgroundColor: "#B07A4F",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+  },
+
+  saveButtonText: {
+    color: "#0A0A0A",
+    fontWeight: "700",
   },
 
   type: {

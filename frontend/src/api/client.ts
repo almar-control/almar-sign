@@ -119,3 +119,30 @@ export async function getWorkers() {
 
   return response.json();
 }
+
+
+export async function updateUserContract(
+  email: string,
+  weeklyHours: number
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/users/${email}/contract`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        weekly_hours: weeklyHours,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "No se pudo actualizar contrato"
+    );
+  }
+
+  return response.json();
+}
