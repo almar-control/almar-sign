@@ -1,6 +1,8 @@
 import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from 
-"@react-navigation/native-stack";
+
+import {
+  createNativeStackNavigator,
+} from "@react-navigation/native-stack";
 
 import SplashScreen from "../screens/SplashScreen";
 import LoginScreen from "../screens/LoginScreen";
@@ -16,7 +18,8 @@ export type RootStackParamList = {
   Admin: undefined;
 };
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack =
+  createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   return (
@@ -25,9 +28,6 @@ export default function AppNavigator() {
         initialRouteName="Splash"
         screenOptions={{
           headerShown: false,
-          contentStyle: {
-            backgroundColor: "#0A0A0A",
-          },
         }}
       >
         <Stack.Screen
@@ -58,3 +58,4 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+

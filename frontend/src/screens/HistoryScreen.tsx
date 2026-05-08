@@ -1,25 +1,127 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/AppNavigator";
+import React, { useEffect, useState } from "react";
 
-type Props = NativeStackScreenProps<RootStackParamList, "History">;
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-export default function HistoryScreen({ navigation }: Props) {
+import { getRecords } from "../api/client";
+
+type RecordItem = {
+  id: string;
+  type: string;
+  timestamp: string;
+  status: string;
+};
+
+export default function HistoryScreen() {
+  const [records, setRecords] = useState<RecordItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadRecords();
+  }, []);
+
+  async function loadRecords() {
+    try {
+      const data = await getRecords();
+
+      setRecords(data.records || []);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color="#B07A4F" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Historial</Text>
-      <Text style={styles.empty}>Sin registros todavía</Text>
+      <Text style={styles.title}>
+        Historial
+      </Text>
 
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text style={styles.link}>Volver</Text>
-      </TouchableOpacity>
+      <FlatList
+        data={records}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.type}>
+              {item.type === "in"
+                ? "ENTRADA"
+                : "SALIDA"}
+            </Text>
+
+            <Text style={styles.date}>
+              {new Date(
+                item.timestamp
+              ).toLocaleString()}
+            </Text>
+
+            <Text style={styles.status}>
+              {item.status}
+            </Text>
+          </View>
+        )}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0A0A0A", justifyContent: "center", padding: 24 },
-  title: { color: "#F3F0EA", fontSize: 32, fontWeight: "700", marginBottom: 16 },
-  empty: { color: "#F3F0EA", opacity: 0.8, marginBottom: 32 },
-  link: { color: "#B07A4F", fontWeight: "700" },
+  center: {
+    flex: 1,
+    backgroundColor: "#0A0A0A",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  container: {
+    flex: 1,
+    backgroundColor: "#0A0A0A",
+    padding: 24,
+    paddingTop: 60,
+  },
+
+  title: {
+    color: "#F3F0EA",
+    fontSize: 32,
+    fontWeight: "700",
+    marginBottom: 24,
+  },
+
+  card: {
+    backgroundColor: "#111315",
+    borderColor: "#B07A4F",
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+  },
+
+  type: {
+    color: "#B07A4F",
+    fontWeight: "700",
+    marginBottom: 6,
+  },
+
+  date: {
+    color: "#F3F0EA",
+    marginBottom: 6,
+  },
+
+  status: {
+    color: "#7ED957",
+  },
 });
+

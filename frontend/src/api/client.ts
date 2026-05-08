@@ -37,14 +37,16 @@ type RecordPayload = {
 export async function checkIn(payload: RecordPayload) {
   const response = await fetch(`${API_BASE_URL}/records/check-in`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(payload),
   });
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.detail || "Error en entrada");
+    throw new Error(data.detail || "Error entrada");
   }
 
   return data;
@@ -53,15 +55,55 @@ export async function checkIn(payload: RecordPayload) {
 export async function checkOut(payload: RecordPayload) {
   const response = await fetch(`${API_BASE_URL}/records/check-out`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(payload),
   });
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.detail || "Error en salida");
+    throw new Error(data.detail || "Error salida");
   }
 
   return data;
 }
+
+export async function getRecords() {
+  const response = await fetch(`${API_BASE_URL}/records`);
+
+  if (!response.ok) {
+    throw new Error("No se pudieron cargar registros");
+  }
+
+  return response.json();
+}
+
+export async function getGpsSettings() {
+  const response = await fetch(
+    `${API_BASE_URL}/settings/gps`
+  );
+
+  if (!response.ok) {
+    throw new Error("No se pudo cargar GPS");
+  }
+
+  return response.json();
+}
+export async function getHours(
+  email: string
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/hours/${email}`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "No se pudieron cargar horas"
+    );
+  }
+
+  return response.json();
+}
+

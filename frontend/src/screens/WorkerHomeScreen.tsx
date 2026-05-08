@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import {
   ActivityIndicator,
   Alert,
@@ -10,11 +11,24 @@ import {
 
 import * as Location from "expo-location";
 
-import type { NativeStackScreenProps } from 
-"@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/AppNavigator";
+import {
+  getDistance,
+} from "geolib";
 
-import { checkIn, checkOut } from "../api/client";
+import type {
+  NativeStackScreenProps,
+} from "@react-navigation/native-stack";
+
+import type {
+  RootStackParamList,
+} from "../navigation/AppNavigator";
+
+import {
+  checkIn,
+  checkOut,
+  getGpsSettings,
+  getHours,
+} from "../api/client";
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
@@ -27,10 +41,16 @@ type GpsData = {
   accuracy: number | null;
 };
 
+type ZoneStatus =
+  | "pending"
+  | "inside"
+  | "outside";
+
 export default function WorkerHomeScreen({
   navigation,
 }: Props) {
-  const [gps, setGps] = useState<GpsData | null>(null);
+  const [gps, setGps] =
+    useState<GpsData | null>(null);
 
   const [gpsStatus, setGpsStatus] =
     useState("GPS pendiente");
@@ -41,35 +61,59 @@ export default function WorkerHomeScreen({
   const [loadingRecord, setLoadingRecord] =
     useState(false);
 
+  const [zoneStatus, setZoneStatus] =
+    useState<ZoneStatus>("pending");
+
+  const [distance, setDistance] =
+    useState<number | null>(null);
+
+  const [hours, setHours] =
+    useState<number>(0);
+
   const userEmail = "worker@almar.com";
+
+  useEffect(() => {
+    getGps();
+    loadHours();
+  }, []);
+
+  async function loadHours() {
+    try {
+      const data = await getHours(
+        userEmail
+      );
+
+      setHours(data.hours || 0);
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   async function getGps() {
     try {
       setLoadingGps(true);
 
-      setGpsStatus("Solicitando permiso GPS...");
-
       const permission =
         await Location.requestForegroundPermissionsAsync();
 
       if (permission.status !== "granted") {
-        setGps(null);
-
         setGpsStatus("GPS denegado");
-
         return;
       }
-
-      setGpsStatus("Obteniendo ubicación real...");
 
       const position =
         await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.High,
         });
 
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
-      const accuracy = position.coords.accuracy;
+      const latitude =
+        position.coords.latitude;
+
+      const longitude =
+        position.coords.longitude;
+
+      const accuracy =
+        position.coords.accuracy;
 
       if (
         !latitude ||
@@ -77,11 +121,35 @@ export default function WorkerHomeScreen({
         latitude === 0 ||
         longitude === 0
       ) {
-        setGps(null);
-
         setGpsStatus("GPS inválido");
-
         return;
+      }
+
+      const gpsSettings =
+        await getGpsSettings();
+
+      const meters = getDistance(
+        {
+          latitude,
+          longitude,
+        },
+        {
+          latitude:
+            gpsSettings.latitude,
+          longitude:
+            gpsSettings.longitude,
+        }
+      );
+
+      setDistance(meters);
+
+      if (
+        meters <=
+        gpsSettings.radius_meters
+      ) {
+        setZoneStatus("inside");
+      } else {
+        setZoneStatus("outside");
       }
 
       setGps({
@@ -92,9 +160,7 @@ export default function WorkerHomeScreen({
 
       setGpsStatus("GPS operativo");
     } catch {
-      setGps(null);
-
-      setGpsStatus("Error obteniendo GPS");
+      setGpsStatus("Error GPS");
     } finally {
       setLoadingGps(false);
     }
@@ -104,8 +170,7 @@ export default function WorkerHomeScreen({
     try {
       if (!gps) {
         Alert.alert(
-          "GPS requerido",
-          "Debes obtener GPS antes de fichar."
+          "GPS requerido"
         );
 
         return;
@@ -113,13 +178,16 @@ export default function WorkerHomeScreen({
 
       setLoadingRecord(true);
 
-      const response = await checkIn({
-        email: userEmail,
-        latitude: gps.latitude,
-        longitude: gps.longitude,
-        accuracy: gps.accuracy,
-        device: "expo-go",
-      });
+      const response =
+        await checkIn({
+          email: userEmail,
+          latitude: gps.latitude,
+          longitude: gps.longitude,
+          accuracy: gps.accuracy,
+          device: "expo-go",
+        });
+
+      await loadHours();
 
       Alert.alert(
         "Entrada registrada",
@@ -127,8 +195,8 @@ export default function WorkerHomeScreen({
       );
     } catch (error: any) {
       Alert.alert(
-        "Error entrada",
-        error.message || "No se pudo fichar entrada"
+        "Error",
+        error.message
       );
     } finally {
       setLoadingRecord(false);
@@ -139,8 +207,7 @@ export default function WorkerHomeScreen({
     try {
       if (!gps) {
         Alert.alert(
-          "GPS requerido",
-          "Debes obtener GPS antes de fichar."
+          "GPS requerido"
         );
 
         return;
@@ -148,13 +215,16 @@ export default function WorkerHomeScreen({
 
       setLoadingRecord(true);
 
-      const response = await checkOut({
-        email: userEmail,
-        latitude: gps.latitude,
-        longitude: gps.longitude,
-        accuracy: gps.accuracy,
-        device: "expo-go",
-      });
+      const response =
+        await checkOut({
+          email: userEmail,
+          latitude: gps.latitude,
+          longitude: gps.longitude,
+          accuracy: gps.accuracy,
+          device: "expo-go",
+        });
+
+      await loadHours();
 
       Alert.alert(
         "Salida registrada",
@@ -162,8 +232,8 @@ export default function WorkerHomeScreen({
       );
     } catch (error: any) {
       Alert.alert(
-        "Error salida",
-        error.message || "No se pudo fichar salida"
+        "Error",
+        error.message
       );
     } finally {
       setLoadingRecord(false);
@@ -185,36 +255,45 @@ export default function WorkerHomeScreen({
           {gpsStatus}
         </Text>
 
-        {gps ? (
-          <View style={styles.gpsBox}>
-            <Text style={styles.gpsText}>
-              Lat: {gps.latitude.toFixed(6)}
-            </Text>
+        <Text
+          style={[
+            styles.zone,
+            zoneStatus === "inside"
+              ? styles.inside
+              : styles.outside,
+          ]}
+        >
+          {zoneStatus === "inside"
+            ? "DENTRO ZONA"
+            : "FUERA ZONA"}
+        </Text>
 
-            <Text style={styles.gpsText}>
-              Lng: {gps.longitude.toFixed(6)}
-            </Text>
-
-            <Text style={styles.gpsText}>
-              Accuracy:{" "}
-              {gps.accuracy
-                ? `${Math.round(gps.accuracy)} m`
-                : "N/D"}
-            </Text>
-          </View>
+        {distance !== null ? (
+          <Text style={styles.distance}>
+            Distancia: {distance} m
+          </Text>
         ) : null}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.label}>
+          Horas acumuladas
+        </Text>
+
+        <Text style={styles.value}>
+          {hours} h
+        </Text>
       </View>
 
       <TouchableOpacity
         style={styles.button}
         onPress={getGps}
-        disabled={loadingGps}
       >
         {loadingGps ? (
           <ActivityIndicator color="#0A0A0A" />
         ) : (
           <Text style={styles.buttonText}>
-            Comprobar GPS
+            Actualizar GPS
           </Text>
         )}
       </TouchableOpacity>
@@ -224,13 +303,9 @@ export default function WorkerHomeScreen({
         onPress={handleCheckIn}
         disabled={loadingRecord}
       >
-        {loadingRecord ? (
-          <ActivityIndicator color="#0A0A0A" />
-        ) : (
-          <Text style={styles.buttonText}>
-            Fichar entrada
-          </Text>
-        )}
+        <Text style={styles.buttonText}>
+          Fichar entrada
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -238,22 +313,34 @@ export default function WorkerHomeScreen({
         onPress={handleCheckOut}
         disabled={loadingRecord}
       >
-        {loadingRecord ? (
-          <ActivityIndicator color="#B07A4F" />
-        ) : (
-          <Text style={styles.secondaryButtonText}>
-            Fichar salida
-          </Text>
-        )}
+        <Text
+          style={
+            styles.secondaryButtonText
+          }
+        >
+          Fichar salida
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         onPress={() =>
-          navigation.navigate("History")
+          navigation.navigate(
+            "History"
+          )
         }
       >
         <Text style={styles.link}>
           Ver historial
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() =>
+          navigation.navigate("Admin")
+        }
+      >
+        <Text style={styles.link}>
+          Panel admin
         </Text>
       </TouchableOpacity>
     </View>
@@ -287,7 +374,6 @@ const styles = StyleSheet.create({
   label: {
     color: "#B07A4F",
     fontSize: 12,
-    textTransform: "uppercase",
     marginBottom: 8,
   },
 
@@ -295,16 +381,25 @@ const styles = StyleSheet.create({
     color: "#F3F0EA",
     fontSize: 18,
     fontWeight: "700",
+    marginBottom: 16,
   },
 
-  gpsBox: {
-    marginTop: 16,
+  zone: {
+    fontSize: 18,
+    fontWeight: "700",
   },
 
-  gpsText: {
+  inside: {
+    color: "#7ED957",
+  },
+
+  outside: {
+    color: "#FF5C5C",
+  },
+
+  distance: {
     color: "#F3F0EA",
-    opacity: 0.8,
-    marginBottom: 6,
+    marginTop: 8,
   },
 
   button: {
@@ -337,7 +432,7 @@ const styles = StyleSheet.create({
   link: {
     color: "#F3F0EA",
     textAlign: "center",
-    opacity: 0.9,
     marginTop: 12,
   },
 });
+
