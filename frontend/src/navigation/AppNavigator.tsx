@@ -13,7 +13,12 @@ import AdminScreen from "../screens/AdminScreen";
 export type RootStackParamList = {
   Splash: undefined;
   Login: undefined;
-  WorkerHome: undefined;
+  WorkerHome:
+    | {
+        email?: string;
+        role?: string;
+      }
+    | undefined;
   History: undefined;
   Admin: undefined;
 };
@@ -58,4 +63,3 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
-

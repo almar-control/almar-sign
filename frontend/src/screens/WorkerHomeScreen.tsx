@@ -23,7 +23,7 @@ type GpsData = {
 
 type ZoneStatus = "pending" | "inside" | "outside";
 
-export default function WorkerHomeScreen({ navigation }: Props) {
+export default function WorkerHomeScreen({ navigation, route }: Props) {
   const [gps, setGps] = useState<GpsData | null>(null);
   const [gpsStatus, setGpsStatus] = useState("GPS pendiente");
   const [loadingGps, setLoadingGps] = useState(false);
@@ -32,7 +32,8 @@ export default function WorkerHomeScreen({ navigation }: Props) {
   const [distance, setDistance] = useState<number | null>(null);
   const [hours, setHours] = useState(0);
 
-  const userEmail = "worker@almar.com";
+  const userEmail = route.params?.email || "worker@almar.com";
+  const userRole = route.params?.role || "worker";
 
   useEffect(() => {
     getGps();
@@ -163,9 +164,15 @@ export default function WorkerHomeScreen({ navigation }: Props) {
     }
   }
 
+  function logout() {
+    navigation.replace("Login");
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Trabajador</Text>
+
+      <Text style={styles.user}>{userEmail}</Text>
 
       <View style={styles.card}>
         <Text style={styles.label}>Estado GPS</Text>
@@ -221,8 +228,14 @@ export default function WorkerHomeScreen({ navigation }: Props) {
         <Text style={styles.link}>Ver historial</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate("Admin")}>
-        <Text style={styles.link}>Panel admin</Text>
+      {userRole === "admin" ? (
+        <TouchableOpacity onPress={() => navigation.navigate("Admin")}>
+          <Text style={styles.link}>Panel admin</Text>
+        </TouchableOpacity>
+      ) : null}
+
+      <TouchableOpacity onPress={logout}>
+        <Text style={styles.logout}>Volver al login</Text>
       </TouchableOpacity>
     </View>
   );
@@ -239,6 +252,10 @@ const styles = StyleSheet.create({
     color: "#F3F0EA",
     fontSize: 32,
     fontWeight: "700",
+    marginBottom: 8,
+  },
+  user: {
+    color: "#B07A4F",
     marginBottom: 24,
   },
   card: {
@@ -307,5 +324,11 @@ const styles = StyleSheet.create({
     color: "#F3F0EA",
     textAlign: "center",
     marginTop: 12,
+  },
+  logout: {
+    color: "#B07A4F",
+    textAlign: "center",
+    marginTop: 18,
+    fontWeight: "700",
   },
 });
