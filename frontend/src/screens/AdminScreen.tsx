@@ -16,7 +16,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
-import { getWorkers, updateUserContract } from "../api/client";
+import { createUser, getWorkers, updateUserContract } from "../api/client";
 
 const API_BASE_URL = "http://192.168.1.37:8000";
 
@@ -50,6 +50,14 @@ export default function AdminScreen({ navigation }: Props) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [workers, setWorkers] = useState<WorkerItem[]>([]);
   const [contractDrafts, setContractDrafts] = useState<Record<string, string>>({});
+  const [newUser, setNewUser] = useState({
+    name: "",
+    surname: "",
+    dni: "",
+    email: "",
+    password: "",
+    weekly_hours: "40",
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -78,6 +86,46 @@ export default function AdminScreen({ navigation }: Props) {
       Alert.alert("Error", "No se pudo cargar el panel admin");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleCreateUser() {
+    try {
+      const weeklyHours = Number(newUser.weekly_hours);
+
+      if (!newUser.name || !newUser.email || !newUser.password) {
+        Alert.alert("Usuario", "Nombre, email y contraseña son obligatorios");
+        return;
+      }
+
+      if (Number.isNaN(weeklyHours) || weeklyHours < 0) {
+        Alert.alert("Contrato", "Horas no válidas");
+        return;
+      }
+
+      await createUser({
+        email: newUser.email,
+        password: newUser.password,
+        name: newUser.name,
+        surname: newUser.surname,
+        dni: newUser.dni,
+        role: "worker",
+        weekly_hours: weeklyHours,
+      });
+
+      setNewUser({
+        name: "",
+        surname: "",
+        dni: "",
+        email: "",
+        password: "",
+        weekly_hours: "40",
+      });
+
+      await loadAdmin();
+      Alert.alert("Usuario creado", "Trabajador creado correctamente");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "No se pudo crear usuario");
     }
   }
 
@@ -161,6 +209,69 @@ export default function AdminScreen({ navigation }: Props) {
         <TouchableOpacity style={styles.exportButton} onPress={openCsvExport}>
           <Text style={styles.exportButtonText}>Exportar CSV</Text>
         </TouchableOpacity>
+
+        <Text style={styles.sectionTitle}>Crear trabajador</Text>
+
+        <View style={styles.workerCard}>
+          <TextInput
+            style={styles.input}
+            placeholder="Nombre"
+            placeholderTextColor="#8F8A82"
+            value={newUser.name}
+            onChangeText={(value) => setNewUser({ ...newUser, name: value })}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Apellidos"
+            placeholderTextColor="#8F8A82"
+            value={newUser.surname}
+            onChangeText={(value) => setNewUser({ ...newUser, surname: value })}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="DNI / NIE"
+            placeholderTextColor="#8F8A82"
+            autoCapitalize="characters"
+            value={newUser.dni}
+            onChangeText={(value) => setNewUser({ ...newUser, dni: value })}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#8F8A82"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={newUser.email}
+            onChangeText={(value) => setNewUser({ ...newUser, email: value })}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Contraseña"
+            placeholderTextColor="#8F8A82"
+            secureTextEntry
+            value={newUser.password}
+            onChangeText={(value) => setNewUser({ ...newUser, password: value })}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Horas semanales"
+            placeholderTextColor="#8F8A82"
+            keyboardType="decimal-pad"
+            value={newUser.weekly_hours}
+            onChangeText={(value) =>
+              setNewUser({ ...newUser, weekly_hours: value.replace(",", ".") })
+            }
+          />
+
+          <TouchableOpacity style={styles.saveButtonFull} onPress={handleCreateUser}>
+            <Text style={styles.saveButtonText}>Crear trabajador</Text>
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.sectionTitle}>Trabajadores</Text>
 
@@ -289,6 +400,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     marginBottom: 16,
+  },
+
+  input: {
+    backgroundColor: "#0A0A0A",
+    borderColor: "#B07A4F",
+    borderWidth: 1,
+    borderRadius: 10,
+    color: "#F3F0EA",
+    padding: 12,
+    marginBottom: 10,
+  },
+
+  saveButtonFull: {
+    backgroundColor: "#B07A4F",
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
   },
 
   workerCard: {

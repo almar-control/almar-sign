@@ -146,3 +146,33 @@ export async function updateUserContract(
 
   return response.json();
 }
+
+export type CreateUserPayload = {
+  email: string;
+  password: string;
+  name: string;
+  surname: string;
+  dni: string;
+  role: string;
+  company_id?: string;
+  workplace_id?: string;
+  weekly_hours: number;
+};
+
+export async function createUser(payload: CreateUserPayload) {
+  const response = await fetch(`${API_BASE_URL}/admin/users`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "No se pudo crear usuario");
+  }
+
+  return data;
+}
