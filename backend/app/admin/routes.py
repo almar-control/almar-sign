@@ -329,3 +329,23 @@ async def update_user_contract(email: str, data: UpdateUserContractRequest):
         "company_id": data.company_id,
         "workplace_id": data.workplace_id,
     }
+
+
+@router.get("/users")
+async def get_users():
+    cursor = (
+        db.users
+        .find({}, {"password": 0})
+        .sort("email", 1)
+    )
+
+    users = []
+
+    async for user in cursor:
+        user["id"] = str(user["_id"])
+        del user["_id"]
+        users.append(user)
+
+    return {
+        "users": users
+    }
