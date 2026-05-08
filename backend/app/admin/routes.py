@@ -2,12 +2,18 @@ from datetime import datetime
 import csv
 import io
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from app.core.database import db
 
 router = APIRouter()
+
+
+class CreateCompanyRequest(BaseModel):
+    name: str
+    tax_id: str = ""
 
 
 def serialize_record(record):
@@ -115,6 +121,62 @@ async def get_admin_summary():
         "active_workers": len(emails),
         "worker_hours": round(total_hours, 2),
         "last_record": serialize_record(last_record) if last_record else None
+    }
+
+
+@router.get("/companies")
+async def get_companies():
+    cursor = (
+        db.companies
+        .find()
+        .sort("name", 1)
+    )
+
+    companies = []
+
+    async for company in cursor:
+        company["id"] = str(company["_id"])
+        del company["_id"]
+        companies.append(company)
+
+    return {
+        "companies": companies
+    }
+
+
+@router.post("/companies")
+async def create_company(data: CreateCompanyRequest):
+    name = data.name.strip()
+
+    if not name:
+        raise HTTPException(
+            status_code=400,
+            detail="Nombre empresa obligatorio"
+        )
+
+    existing = await db.companies.find_one({
+        "name": name
+    })
+
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail="Empresa ya existe"
+        )
+
+    company = {
+        "name": name,
+        "tax_id": data.tax_id,
+        "active": True,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+
+    result = await db.companies.insert_one(company)
+
+    return {
+        "success": True,
+        "id": str(result.inserted_id),
+        "name": name
     }
 
 
