@@ -360,3 +360,78 @@ async def get_users():
     return {
         "users": users
     }
+
+
+class CreateUserRequest(BaseModel):
+    email: str
+    password: str
+    name: str
+    surname: str = ""
+    dni: str = ""
+    role: str = "worker"
+    company_id: str = ""
+    workplace_id: str = ""
+    weekly_hours: float = 40
+
+
+@router.post("/users")
+async def create_user(data: CreateUserRequest):
+    email = data.email.strip().lower()
+    dni = data.dni.strip().upper().replace(" ", "")
+
+    if not email or not data.password or not data.name:
+        raise HTTPException(
+            status_code=400,
+            detail="Email, contraseña y nombre son obligatorios"
+        )
+
+    if data.role not in ["admin", "worker"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Role no válido"
+        )
+
+    existing_email = await db.users.find_one({"email": email})
+
+    if existing_email:
+        raise HTTPException(
+            status_code=409,
+            detail="El email ya existe"
+        )
+
+    if dni:
+        existing_dni = await db.users.find_one({"dni": dni})
+
+        if existing_dni:
+            raise HTTPException(
+                status_code=409,
+                detail="El DNI/NIE ya existe"
+            )
+
+    user = {
+        "email": email,
+        "password": data.password,
+        "name": data.name.strip(),
+        "surname": data.surname.strip(),
+        "dni": dni,
+        "role": data.role,
+        "company_id": data.company_id,
+        "workplace_id": data.workplace_id,
+        "weekly_hours": data.weekly_hours,
+        "active": True,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+
+    result = await db.users.insert_one(user)
+
+    return {
+        "success": True,
+        "id": str(result.inserted_id),
+        "email": email,
+        "name": user["name"],
+        "surname": user["surname"],
+        "dni": dni,
+        "role": data.role,
+        "weekly_hours": data.weekly_hours,
+        "active": True
+    }
