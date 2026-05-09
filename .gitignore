@@ -1,11 +1,24 @@
-node_modules/
-frontend/node_modules/
-backend/venv/
-.venv/
+# env
+.env
+.env.*
+!.env.example
+
+# Python
+venv/
 __pycache__/
 *.pyc
-.env
-.DS_Store
+
+# Backend
+backend/.env
+backend/venv/
+
+# Node / Expo
+node_modules/
+frontend/node_modules/
+frontend/clean/
 .expo/
 dist/
 build/
+
+# macOS
+.DS_Store
