@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://192.168.1.40:8000";
+import { API_BASE_URL } from "../config/api";
 
 export async function healthCheck() {
   const response = await fetch(`${API_BASE_URL}/health`);

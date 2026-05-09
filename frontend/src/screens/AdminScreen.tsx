@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config/api";
 import React, { useEffect, useState } from "react";
 
 import {
@@ -18,7 +19,6 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { createUser, getWorkers, updateUserContract } from "../api/client";
 
-const API_BASE_URL = "http://192.168.1.40:8000";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Admin">;
 
