@@ -5,7 +5,7 @@ router = APIRouter()
 GPS_SETTINGS = {
     "latitude": 39.5696,
     "longitude": 2.6502,
-    "radius_meters": 150,
+    "radius_meters": 50000,
 }
 
 @router.get("/gps")
