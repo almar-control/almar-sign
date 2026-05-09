@@ -54,6 +54,13 @@ export default function AdminScreen({ navigation }: Props) {
     name: "",
     surname: "",
     dni: "",
+    phone: "",
+    address: "",
+    social_security_number: "",
+    job_category: "",
+    department: "",
+    base_salary: "",
+    iban: "",
     email: "",
     password: "",
     weekly_hours: "40",
@@ -109,6 +116,13 @@ export default function AdminScreen({ navigation }: Props) {
         name: newUser.name,
         surname: newUser.surname,
         dni: newUser.dni,
+        phone: newUser.phone,
+        address: newUser.address,
+        social_security_number: newUser.social_security_number,
+        job_category: newUser.job_category,
+        department: newUser.department,
+        base_salary: Number(newUser.base_salary || 0),
+        iban: newUser.iban,
         role: "worker",
         weekly_hours: weeklyHours,
       });
@@ -117,6 +131,13 @@ export default function AdminScreen({ navigation }: Props) {
         name: "",
         surname: "",
         dni: "",
+        phone: "",
+        address: "",
+        social_security_number: "",
+        job_category: "",
+        department: "",
+        base_salary: "",
+        iban: "",
         email: "",
         password: "",
         weekly_hours: "40",
@@ -236,6 +257,140 @@ export default function AdminScreen({ navigation }: Props) {
             autoCapitalize="characters"
             value={newUser.dni}
             onChangeText={(value) => setNewUser({ ...newUser, dni: value })}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Teléfono"
+            placeholderTextColor="#8F8A82"
+            keyboardType="phone-pad"
+            value={newUser.phone}
+            onChangeText={(value) => setNewUser({ ...newUser, phone: value })}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Dirección"
+            placeholderTextColor="#8F8A82"
+            value={newUser.address}
+            onChangeText={(value) => setNewUser({ ...newUser, address: value })}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Número Seguridad Social"
+            placeholderTextColor="#8F8A82"
+            value={newUser.social_security_number}
+            onChangeText={(value) =>
+              setNewUser({ ...newUser, social_security_number: value })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Categoría"
+            placeholderTextColor="#8F8A82"
+            value={newUser.job_category}
+            onChangeText={(value) =>
+              setNewUser({ ...newUser, job_category: value })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Departamento"
+            placeholderTextColor="#8F8A82"
+            value={newUser.department}
+            onChangeText={(value) =>
+              setNewUser({ ...newUser, department: value })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Salario base"
+            placeholderTextColor="#8F8A82"
+            keyboardType="decimal-pad"
+            value={newUser.base_salary}
+            onChangeText={(value) =>
+              setNewUser({ ...newUser, base_salary: value.replace(",", ".") })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="IBAN"
+            placeholderTextColor="#8F8A82"
+            autoCapitalize="characters"
+            value={newUser.iban}
+            onChangeText={(value) => setNewUser({ ...newUser, iban: value })}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Teléfono"
+            placeholderTextColor="#8F8A82"
+            keyboardType="phone-pad"
+            value={newUser.phone}
+            onChangeText={(value) => setNewUser({ ...newUser, phone: value })}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Dirección"
+            placeholderTextColor="#8F8A82"
+            value={newUser.address}
+            onChangeText={(value) => setNewUser({ ...newUser, address: value })}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Número Seguridad Social"
+            placeholderTextColor="#8F8A82"
+            value={newUser.social_security_number}
+            onChangeText={(value) =>
+              setNewUser({ ...newUser, social_security_number: value })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Categoría"
+            placeholderTextColor="#8F8A82"
+            value={newUser.job_category}
+            onChangeText={(value) =>
+              setNewUser({ ...newUser, job_category: value })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Departamento"
+            placeholderTextColor="#8F8A82"
+            value={newUser.department}
+            onChangeText={(value) =>
+              setNewUser({ ...newUser, department: value })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Salario base"
+            placeholderTextColor="#8F8A82"
+            keyboardType="decimal-pad"
+            value={newUser.base_salary}
+            onChangeText={(value) =>
+              setNewUser({ ...newUser, base_salary: value.replace(",", ".") })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="IBAN"
+            placeholderTextColor="#8F8A82"
+            autoCapitalize="characters"
+            value={newUser.iban}
+            onChangeText={(value) => setNewUser({ ...newUser, iban: value })}
           />
 
           <TextInput

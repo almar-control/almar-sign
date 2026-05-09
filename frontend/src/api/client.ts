@@ -153,6 +153,13 @@ export type CreateUserPayload = {
   name: string;
   surname: string;
   dni: string;
+  phone?: string;
+  address?: string;
+  social_security_number?: string;
+  job_category?: string;
+  department?: string;
+  base_salary?: number;
+  iban?: string;
   role: string;
   company_id?: string;
   workplace_id?: string;
