@@ -1,6 +1,5 @@
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
-import certifi
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,5 +10,5 @@ DATABASE_NAME = os.getenv("DATABASE_NAME", "almar_sign")
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI no configurado")
 
-client = AsyncIOMotorClient(MONGO_URI, tls=True, tlsCAFile=certifi.where())
+client = AsyncIOMotorClient(MONGO_URI)
 db = client[DATABASE_NAME]
