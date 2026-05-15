@@ -52,6 +52,7 @@ export default function AdminScreen({ navigation }: Props) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [workers, setWorkers] = useState<WorkerItem[]>([]);
   const [searchText, setSearchText] = useState("");
+  const [showInactiveWorkers, setShowInactiveWorkers] = useState(false);
   const [contractDrafts, setContractDrafts] = useState<Record<string, string>>({});
   const [newUser, setNewUser] = useState({
     name: "",
@@ -218,6 +219,7 @@ export default function AdminScreen({ navigation }: Props) {
 
   const filteredWorkers = workers
     .filter((worker) => worker.role !== "admin")
+    .filter((worker) => showInactiveWorkers || worker.active)
     .filter((worker) => {
       const query = searchText.trim().toLowerCase();
 
@@ -412,9 +414,20 @@ export default function AdminScreen({ navigation }: Props) {
           onChangeText={setSearchText}
         />
 
-        <Text style={styles.resultCount}>
-          {filteredWorkers.length} trabajadores encontrados
-        </Text>
+        <View style={styles.filterRow}>
+          <Text style={styles.resultCount}>
+            {filteredWorkers.length} trabajadores encontrados
+          </Text>
+
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setShowInactiveWorkers(!showInactiveWorkers)}
+          >
+            <Text style={styles.filterButtonText}>
+              {showInactiveWorkers ? "Ocultar inactivos" : "Mostrar inactivos"}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <FlatList
           data={filteredWorkers}
@@ -611,6 +624,26 @@ const styles = StyleSheet.create({
   },
 
 
+
+
+  filterRow: {
+    marginBottom: 12,
+  },
+
+  filterButton: {
+    borderColor: "#B07A4F",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+
+  filterButtonText: {
+    color: "#B07A4F",
+    fontWeight: "700",
+  },
 
   resultCount: {
     color: "#8F8A82",
