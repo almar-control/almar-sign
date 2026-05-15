@@ -96,7 +96,7 @@ async def get_hours(email: str):
 async def get_workers():
     cursor = (
         db.users
-        .find({"active": True})
+        .find({"role": "worker"})
         .sort("email", 1)
     )
 
@@ -114,6 +114,7 @@ async def get_workers():
             "email": email,
             "name": user.get("name", ""),
             "role": user.get("role", ""),
+            "active": user.get("active", False),
             "company_id": user.get("company_id", ""),
             "workplace_id": user.get("workplace_id", ""),
             "weekly_hours": user.get("weekly_hours", 0),
