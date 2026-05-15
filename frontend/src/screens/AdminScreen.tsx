@@ -202,18 +202,20 @@ export default function AdminScreen({ navigation }: Props) {
     return new Date(timestamp).toLocaleString();
   }
 
-  const filteredWorkers = workers.filter((worker) => {
-    const query = searchText.trim().toLowerCase();
+  const filteredWorkers = workers
+    .filter((worker) => worker.role !== "admin")
+    .filter((worker) => {
+      const query = searchText.trim().toLowerCase();
 
-    if (!query) {
-      return true;
-    }
+      if (!query) {
+        return true;
+      }
 
-    return (
-      worker.email.toLowerCase().includes(query) ||
-      (worker.name || "").toLowerCase().includes(query)
-    );
-  });
+      return (
+        worker.email.toLowerCase().includes(query) ||
+        (worker.name || "").toLowerCase().includes(query)
+      );
+    });
 
   async function logout() {
     await AsyncStorage.removeItem("user_email");
