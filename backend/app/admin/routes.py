@@ -307,6 +307,36 @@ async def create_workplace(data: CreateWorkplaceRequest):
     }
 
 
+
+class UpdateUserActiveRequest(BaseModel):
+    active: bool
+
+
+@router.patch("/users/{email}/active")
+async def toggle_user_active(email: str, data: UpdateUserActiveRequest):
+    clean_email = email.strip().lower()
+
+    result = await db.users.update_one(
+        {"email": clean_email},
+        {"$set": {
+            "active": data.active,
+            "updated_at": datetime.utcnow().isoformat(),
+        }}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Usuario no encontrado"
+        )
+
+    return {
+        "success": True,
+        "email": clean_email,
+        "active": data.active
+    }
+
+
 @router.patch("/users/{email}/contract")
 async def update_user_contract(email: str, data: UpdateUserContractRequest):
     clean_email = email.strip().lower()

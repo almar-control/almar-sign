@@ -147,6 +147,34 @@ export async function updateUserContract(
   return response.json();
 }
 
+
+export async function updateUserActive(
+  email: string,
+  active: boolean
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/users/${email}/active`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        active,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "No se pudo actualizar estado");
+  }
+
+  return data;
+}
+
+
 export type CreateUserPayload = {
   email: string;
   password: string;

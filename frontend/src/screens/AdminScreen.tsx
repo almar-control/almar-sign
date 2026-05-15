@@ -17,7 +17,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
-import { createUser, getWorkers, updateUserContract } from "../api/client";
+import { createUser, getWorkers, updateUserActive, updateUserContract } from "../api/client";
 
 
 type Props = NativeStackScreenProps<RootStackParamList, "Admin">;
@@ -158,6 +158,20 @@ export default function AdminScreen({ navigation }: Props) {
       Alert.alert("Usuario creado", "Trabajador creado correctamente");
     } catch (error: any) {
       Alert.alert("Error", error.message || "No se pudo crear usuario");
+    }
+  }
+
+  async function toggleWorkerActive(email: string, active: boolean) {
+    try {
+      await updateUserActive(email, active);
+      await loadAdmin();
+
+      Alert.alert(
+        "Estado actualizado",
+        active ? "Trabajador activado" : "Trabajador desactivado"
+      );
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "No se pudo actualizar el estado");
     }
   }
 
@@ -462,6 +476,20 @@ export default function AdminScreen({ navigation }: Props) {
                 </TouchableOpacity>
               </View>
 
+              <TouchableOpacity
+                style={[
+                  styles.activeToggleButton,
+                  item.active
+                    ? styles.deactivateButton
+                    : styles.activateButton,
+                ]}
+                onPress={() => toggleWorkerActive(item.email, !item.active)}
+              >
+                <Text style={styles.activeToggleButtonText}>
+                  {item.active ? "Desactivar trabajador" : "Activar trabajador"}
+                </Text>
+              </TouchableOpacity>
+
               <View style={styles.lastRecordBox}>
                 <Text style={styles.type}>
                   Último fichaje: {formatRecordType(item.last_record?.type)}
@@ -644,6 +672,30 @@ const styles = StyleSheet.create({
     color: "#F3F0EA",
     opacity: 0.8,
     fontSize: 13,
+  },
+
+  activeToggleButton: {
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    marginTop: 12,
+  },
+
+  activateButton: {
+    backgroundColor: "#163D22",
+    borderColor: "#7ED957",
+    borderWidth: 1,
+  },
+
+  deactivateButton: {
+    backgroundColor: "#3D1616",
+    borderColor: "#FF5C5C",
+    borderWidth: 1,
+  },
+
+  activeToggleButtonText: {
+    color: "#F3F0EA",
+    fontWeight: "700",
   },
 
   lastRecordBox: {
