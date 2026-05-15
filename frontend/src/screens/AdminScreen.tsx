@@ -38,6 +38,8 @@ type Summary = {
 
 type WorkerItem = {
   email: string;
+  name?: string;
+  active?: boolean;
   hours: number;
   weekly_hours?: number;
   role?: string;
@@ -49,6 +51,7 @@ type WorkerItem = {
 export default function AdminScreen({ navigation }: Props) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [workers, setWorkers] = useState<WorkerItem[]>([]);
+  const [searchText, setSearchText] = useState("");
   const [contractDrafts, setContractDrafts] = useState<Record<string, string>>({});
   const [newUser, setNewUser] = useState({
     name: "",
@@ -77,7 +80,15 @@ export default function AdminScreen({ navigation }: Props) {
       const summaryData = await summaryResponse.json();
 
       const workersData = await getWorkers();
-      const loadedWorkers = workersData.workers || [];
+      const loadedWorkers = (workersData.workers || []).sort(
+        (a: WorkerItem, b: WorkerItem) => {
+          if (a.active !== b.active) {
+            return a.active ? -1 : 1;
+          }
+
+          return (a.name || a.email).localeCompare(b.name || b.email);
+        }
+      );
 
       const drafts: Record<string, string> = {};
 
@@ -190,6 +201,19 @@ export default function AdminScreen({ navigation }: Props) {
     if (!timestamp) return "Sin fecha";
     return new Date(timestamp).toLocaleString();
   }
+
+  const filteredWorkers = workers.filter((worker) => {
+    const query = searchText.trim().toLowerCase();
+
+    if (!query) {
+      return true;
+    }
+
+    return (
+      worker.email.toLowerCase().includes(query) ||
+      (worker.name || "").toLowerCase().includes(query)
+    );
+  });
 
   async function logout() {
     await AsyncStorage.removeItem("user_email");
@@ -363,17 +387,55 @@ export default function AdminScreen({ navigation }: Props) {
 
         <Text style={styles.sectionTitle}>Trabajadores</Text>
 
+        <TextInput
+          style={styles.input}
+          placeholder="Buscar trabajador por nombre o email"
+          placeholderTextColor="#8F8A82"
+          autoCapitalize="none"
+          value={searchText}
+          onChangeText={setSearchText}
+        />
+
+        <Text style={styles.resultCount}>
+          {filteredWorkers.length} trabajadores encontrados
+        </Text>
+
         <FlatList
-          data={workers}
+          data={filteredWorkers}
           keyExtractor={(item) => item.email}
           scrollEnabled={false}
           renderItem={({ item }) => (
             <View style={styles.workerCard}>
-              <Text style={styles.email}>{item.email}</Text>
+              <View style={styles.workerHeader}>
+                <View style={styles.workerInfo}>
+                  <Text style={styles.workerName}>
+                    {item.name || item.email}
+                  </Text>
 
-              <Text style={styles.hours}>
-                {item.hours} h acumuladas
-              </Text>
+                  <Text style={styles.workerEmail}>
+                    {item.email}
+                  </Text>
+                </View>
+
+                <Text
+                  style={[
+                    styles.workerStatus,
+                    item.active ? styles.workerActive : styles.workerInactive,
+                  ]}
+                >
+                  {item.active ? "ACTIVO" : "INACTIVO"}
+                </Text>
+              </View>
+
+              <View style={styles.workerMetaRow}>
+                <Text style={styles.workerMeta}>
+                  Rol: {item.role || "worker"}
+                </Text>
+
+                <Text style={styles.workerMeta}>
+                  Horas: {item.hours} h
+                </Text>
+              </View>
 
               <Text style={styles.contract}>Contrato h/semana</Text>
 
@@ -398,13 +460,15 @@ export default function AdminScreen({ navigation }: Props) {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.type}>
-                Último fichaje: {formatRecordType(item.last_record?.type)}
-              </Text>
+              <View style={styles.lastRecordBox}>
+                <Text style={styles.type}>
+                  Último fichaje: {formatRecordType(item.last_record?.type)}
+                </Text>
 
-              <Text style={styles.date}>
-                {formatDate(item.last_record?.timestamp)}
-              </Text>
+                <Text style={styles.date}>
+                  {formatDate(item.last_record?.timestamp)}
+                </Text>
+              </View>
             </View>
           )}
           ListEmptyComponent={
@@ -514,6 +578,77 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
+  },
+
+
+
+  resultCount: {
+    color: "#8F8A82",
+    fontSize: 13,
+    marginBottom: 12,
+  },
+
+  workerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
+    marginBottom: 12,
+  },
+
+  workerInfo: {
+    flex: 1,
+  },
+
+  workerName: {
+    color: "#F3F0EA",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+
+  workerEmail: {
+    color: "#8F8A82",
+    fontSize: 13,
+  },
+
+  workerStatus: {
+    fontSize: 11,
+    fontWeight: "700",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+
+  workerActive: {
+    backgroundColor: "#163D22",
+    color: "#7ED957",
+  },
+
+  workerInactive: {
+    backgroundColor: "#3D1616",
+    color: "#FF5C5C",
+  },
+
+  workerMetaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 16,
+  },
+
+  workerMeta: {
+    color: "#F3F0EA",
+    opacity: 0.8,
+    fontSize: 13,
+  },
+
+  lastRecordBox: {
+    backgroundColor: "#0A0A0A",
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
   },
 
   email: {
