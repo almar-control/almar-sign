@@ -12,6 +12,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Image,
 } from "react-native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -326,7 +327,18 @@ export default function AdminScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Admin</Text>
+      <View style={styles.adminHeader}>
+        <Image
+          source={require("../../assets/logo_negro.png")}
+          style={styles.adminLogo}
+          resizeMode="contain"
+        />
+
+        <View>
+          <Text style={styles.title}>Panel admin</Text>
+          <Text style={styles.subtitle}>ALMAR Sign</Text>
+        </View>
+      </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.grid}>
@@ -701,11 +713,31 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
 
+
+  adminHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    marginBottom: 24,
+  },
+
+  adminLogo: {
+    width: 72,
+    height: 72,
+    borderRadius: 16,
+  },
+
   title: {
     color: "#F3F0EA",
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "700",
-    marginBottom: 24,
+    marginBottom: 4,
+  },
+
+  subtitle: {
+    color: "#B07A4F",
+    fontSize: 14,
+    fontWeight: "600",
   },
 
   grid: {
