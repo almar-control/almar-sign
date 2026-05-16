@@ -153,6 +153,51 @@ async def calculate_hours_breakdown(email: str, weekly_hours: float = 0):
     }
 
 
+class CorrectRecordRequest(BaseModel):
+    type: str
+    timestamp: str
+    reason: str
+
+
+@router.patch("/records/{record_id}/correction")
+async def correct_record(record_id: str, data: CorrectRecordRequest):
+    if data.type not in ["in", "out"]:
+        raise HTTPException(status_code=400, detail="Tipo de fichaje no válido")
+
+    if not data.reason.strip():
+        raise HTTPException(status_code=400, detail="Motivo obligatorio")
+
+    try:
+        parsed_timestamp = datetime.fromisoformat(data.timestamp.replace("Z", "+00:00"))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Fecha/hora no válida")
+
+    original_record = await db.records.find_one({"_id": ObjectId(record_id)})
+
+    if not original_record:
+        raise HTTPException(status_code=404, detail="Fichaje no encontrado")
+
+    result = await db.records.update_one(
+        {"_id": ObjectId(record_id)},
+        {"$set": {
+            "type": data.type,
+            "timestamp": parsed_timestamp.isoformat(),
+            "status": "corrected",
+            "status_reason": "Corregido manualmente",
+            "correction_reason": data.reason.strip(),
+            "corrected_at": datetime.utcnow().isoformat(),
+            "original_type": original_record.get("type"),
+            "original_timestamp": original_record.get("timestamp"),
+        }}
+    )
+
+    return {
+        "success": True,
+        "updated": result.modified_count,
+        "record_id": record_id,
+    }
+
+
 @router.get("/records")
 async def get_all_records():
     cursor = (

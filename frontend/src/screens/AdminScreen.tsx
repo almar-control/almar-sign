@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import {
+  correctRecord,
   createUser,
   getCompanyWorkplaceSettings,
   getWorkers,
@@ -36,6 +37,11 @@ type RecordItem = {
   email: string;
   type: string;
   timestamp: string;
+  status?: string;
+  status_reason?: string;
+  distance_meters?: number | null;
+  allowed_radius_meters?: number | null;
+  correction_reason?: string;
 };
 
 type Summary = {
@@ -86,6 +92,12 @@ export default function AdminScreen({ navigation }: Props) {
   });
   const [contractDrafts, setContractDrafts] = useState<Record<string, string>>({});
   const [editingEmail, setEditingEmail] = useState<string | null>(null);
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [recordCorrection, setRecordCorrection] = useState({
+    type: "in",
+    timestamp: "",
+    reason: "",
+  });
   const [editUser, setEditUser] = useState({
     name: "",
     surname: "",
@@ -350,6 +362,57 @@ export default function AdminScreen({ navigation }: Props) {
   function formatDate(timestamp?: string) {
     if (!timestamp) return "Sin fecha";
     return new Date(timestamp).toLocaleString();
+  }
+
+  function formatRecordStatus(status?: string) {
+    if (status === "valid") return "Válido";
+    if (status === "review") return "Revisar";
+    if (status === "corrected") return "Corregido";
+    return "Sin estado";
+  }
+
+  function startCorrectRecord(record: RecordItem) {
+    setEditingRecordId(record.id);
+    setRecordCorrection({
+      type: record.type,
+      timestamp: record.timestamp,
+      reason: "",
+    });
+  }
+
+  function cancelCorrectRecord() {
+    setEditingRecordId(null);
+    setRecordCorrection({
+      type: "in",
+      timestamp: "",
+      reason: "",
+    });
+  }
+
+  async function saveRecordCorrection() {
+    try {
+      if (!editingRecordId) {
+        return;
+      }
+
+      if (!recordCorrection.reason.trim()) {
+        Alert.alert("Corrección", "El motivo es obligatorio");
+        return;
+      }
+
+      await correctRecord(editingRecordId, {
+        type: recordCorrection.type,
+        timestamp: recordCorrection.timestamp,
+        reason: recordCorrection.reason,
+      });
+
+      cancelCorrectRecord();
+      await loadAdmin();
+
+      Alert.alert("Fichaje corregido");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "No se pudo corregir fichaje");
+    }
   }
 
   const workerStats = workers
@@ -869,6 +932,109 @@ export default function AdminScreen({ navigation }: Props) {
                   <Text style={styles.date}>
                     {formatDate(item.last_record.timestamp)}
                   </Text>
+
+                  <Text
+                    style={[
+                      styles.recordStatus,
+                      item.last_record.status === "valid"
+                        ? styles.recordStatusValid
+                        : styles.recordStatusReview,
+                    ]}
+                  >
+                    {formatRecordStatus(item.last_record.status)}
+                    {item.last_record.status_reason
+                      ? ` · ${item.last_record.status_reason}`
+                      : ""}
+                  </Text>
+
+                  {item.last_record.distance_meters !== undefined &&
+                  item.last_record.distance_meters !== null ? (
+                    <Text style={styles.recordDistance}>
+                      Distancia: {item.last_record.distance_meters} m / radio{" "}
+                      {item.last_record.allowed_radius_meters ?? "-"} m
+                    </Text>
+                  ) : null}
+
+                  {item.last_record.correction_reason ? (
+                    <Text style={styles.recordDistance}>
+                      Motivo: {item.last_record.correction_reason}
+                    </Text>
+                  ) : null}
+
+                  <TouchableOpacity
+                    style={styles.correctRecordButton}
+                    onPress={() => startCorrectRecord(item.last_record)}
+                  >
+                    <Text style={styles.correctRecordButtonText}>
+                      Corregir último fichaje
+                    </Text>
+                  </TouchableOpacity>
+
+                  {editingRecordId === item.last_record.id ? (
+                    <View style={styles.correctionPanel}>
+                      <Text style={styles.contract}>Tipo corregido</Text>
+
+                      <View style={styles.correctionTypeRow}>
+                        <TouchableOpacity
+                          style={[
+                            styles.correctionTypeButton,
+                            recordCorrection.type === "in" && styles.correctionTypeSelected,
+                          ]}
+                          onPress={() =>
+                            setRecordCorrection({ ...recordCorrection, type: "in" })
+                          }
+                        >
+                          <Text style={styles.correctionTypeText}>Entrada</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={[
+                            styles.correctionTypeButton,
+                            recordCorrection.type === "out" && styles.correctionTypeSelected,
+                          ]}
+                          onPress={() =>
+                            setRecordCorrection({ ...recordCorrection, type: "out" })
+                          }
+                        >
+                          <Text style={styles.correctionTypeText}>Salida</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Fecha ISO"
+                        placeholderTextColor="#8F8A82"
+                        value={recordCorrection.timestamp}
+                        onChangeText={(value) =>
+                          setRecordCorrection({ ...recordCorrection, timestamp: value })
+                        }
+                      />
+
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Motivo obligatorio"
+                        placeholderTextColor="#8F8A82"
+                        value={recordCorrection.reason}
+                        onChangeText={(value) =>
+                          setRecordCorrection({ ...recordCorrection, reason: value })
+                        }
+                      />
+
+                      <TouchableOpacity
+                        style={styles.saveButtonFull}
+                        onPress={saveRecordCorrection}
+                      >
+                        <Text style={styles.saveButtonText}>Guardar corrección</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.cancelEditButton}
+                        onPress={cancelCorrectRecord}
+                      >
+                        <Text style={styles.cancelEditButtonText}>Cancelar</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : null}
                 </View>
               ) : null}
             </View>
@@ -1210,6 +1376,76 @@ const styles = StyleSheet.create({
   cancelEditButtonText: {
     color: "#AAA",
     fontWeight: "700",
+  },
+
+
+
+  correctRecordButton: {
+    borderColor: "#FFB020",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    marginTop: 12,
+  },
+
+  correctRecordButtonText: {
+    color: "#FFB020",
+    fontWeight: "700",
+  },
+
+  correctionPanel: {
+    backgroundColor: "#050505",
+    borderColor: "#FFB020",
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 12,
+  },
+
+  correctionTypeRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+
+  correctionTypeButton: {
+    flex: 1,
+    borderColor: "#777",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+  },
+
+  correctionTypeSelected: {
+    borderColor: "#B07A4F",
+    backgroundColor: "#24180F",
+  },
+
+  correctionTypeText: {
+    color: "#F3F0EA",
+    fontWeight: "700",
+  },
+
+  recordStatus: {
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 8,
+  },
+
+  recordStatusValid: {
+    color: "#7ED957",
+  },
+
+  recordStatusReview: {
+    color: "#FFB020",
+  },
+
+  recordDistance: {
+    color: "#8F8A82",
+    fontSize: 12,
+    marginTop: 4,
   },
 
   lastRecordBox: {

@@ -287,3 +287,28 @@ export async function updateUser(email: string, payload: UpdateUserPayload) {
 
   return data;
 }
+
+
+export type CorrectRecordPayload = {
+  type: string;
+  timestamp: string;
+  reason: string;
+};
+
+export async function correctRecord(recordId: string, payload: CorrectRecordPayload) {
+  const response = await fetch(`${API_BASE_URL}/admin/records/${recordId}/correction`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "No se pudo corregir fichaje");
+  }
+
+  return data;
+}

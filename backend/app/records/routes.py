@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from math import atan2, cos, radians, sin, sqrt
 from typing import Optional
 
 from bson import ObjectId
@@ -29,6 +30,80 @@ def validate_gps(data: RecordRequest):
         raise HTTPException(status_code=400, detail="GPS inválido")
 
 
+def calculate_distance_meters(lat1: float, lon1: float, lat2: float, lon2: float):
+    earth_radius_meters = 6371000
+
+    d_lat = radians(lat2 - lat1)
+    d_lon = radians(lon2 - lon1)
+
+    a = (
+        sin(d_lat / 2) ** 2
+        + cos(radians(lat1)) * cos(radians(lat2)) * sin(d_lon / 2) ** 2
+    )
+
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    return round(earth_radius_meters * c, 2)
+
+
+async def get_active_workplace():
+    company = await db.companies.find_one({"active": True}, sort=[("created_at", 1)])
+
+    if not company:
+        return None
+
+    return await db.workplaces.find_one(
+        {"company_id": str(company["_id"]), "active": True},
+        sort=[("created_at", 1)]
+    )
+
+
+async def build_gps_status(data: RecordRequest):
+    workplace = await get_active_workplace()
+
+    if not workplace:
+        return {
+            "status": "review",
+            "status_reason": "Centro activo no configurado",
+            "distance_meters": None,
+            "allowed_radius_meters": None,
+        }
+
+    workplace_latitude = workplace.get("latitude")
+    workplace_longitude = workplace.get("longitude")
+    allowed_radius = workplace.get("radius_meters", 0)
+
+    if not workplace_latitude or not workplace_longitude or not allowed_radius:
+        return {
+            "status": "review",
+            "status_reason": "GPS del centro incompleto",
+            "distance_meters": None,
+            "allowed_radius_meters": allowed_radius,
+        }
+
+    distance = calculate_distance_meters(
+        workplace_latitude,
+        workplace_longitude,
+        data.latitude,
+        data.longitude,
+    )
+
+    if distance > allowed_radius:
+        return {
+            "status": "review",
+            "status_reason": "Fuera de zona",
+            "distance_meters": distance,
+            "allowed_radius_meters": allowed_radius,
+        }
+
+    return {
+        "status": "valid",
+        "status_reason": "Dentro de zona",
+        "distance_meters": distance,
+        "allowed_radius_meters": allowed_radius,
+    }
+
+
 async def get_last_record(email: str):
     return await db.records.find_one(
         {"email": email},
@@ -49,6 +124,7 @@ async def check_in(data: RecordRequest):
         )
 
     now = datetime.now(timezone.utc)
+    gps_status = await build_gps_status(data)
 
     record = {
         "email": data.email,
@@ -59,7 +135,10 @@ async def check_in(data: RecordRequest):
         "device": data.device,
         "timestamp": now.isoformat(),
         "created_at": now,
-        "status": "valid",
+        "status": gps_status["status"],
+        "status_reason": gps_status["status_reason"],
+        "distance_meters": gps_status["distance_meters"],
+        "allowed_radius_meters": gps_status["allowed_radius_meters"],
     }
 
     result = await db.records.insert_one(record)
@@ -90,6 +169,7 @@ async def check_out(data: RecordRequest):
         )
 
     now = datetime.now(timezone.utc)
+    gps_status = await build_gps_status(data)
 
     record = {
         "email": data.email,
@@ -100,7 +180,10 @@ async def check_out(data: RecordRequest):
         "device": data.device,
         "timestamp": now.isoformat(),
         "created_at": now,
-        "status": "valid",
+        "status": gps_status["status"],
+        "status_reason": gps_status["status_reason"],
+        "distance_meters": gps_status["distance_meters"],
+        "allowed_radius_meters": gps_status["allowed_radius_meters"],
     }
 
     result = await db.records.insert_one(record)
