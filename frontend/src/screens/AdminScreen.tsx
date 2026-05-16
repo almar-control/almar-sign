@@ -279,6 +279,21 @@ export default function AdminScreen({ navigation }: Props) {
     return new Date(timestamp).toLocaleString();
   }
 
+  const workerStats = workers
+    .filter((worker) => worker.role !== "admin")
+    .reduce(
+      (stats, worker) => {
+        if (worker.active) {
+          stats.active += 1;
+        } else {
+          stats.inactive += 1;
+        }
+
+        return stats;
+      },
+      { active: 0, inactive: 0 }
+    );
+
   const filteredWorkers = workers
     .filter((worker) => worker.role !== "admin")
     .filter((worker) => showInactiveWorkers || worker.active)
@@ -546,7 +561,7 @@ export default function AdminScreen({ navigation }: Props) {
 
         <View style={styles.filterRow}>
           <Text style={styles.resultCount}>
-            {filteredWorkers.length} trabajadores encontrados
+            {workerStats.active} activos · {workerStats.inactive} inactivos
           </Text>
 
           <TouchableOpacity
@@ -564,7 +579,16 @@ export default function AdminScreen({ navigation }: Props) {
           keyExtractor={(item) => item.email}
           scrollEnabled={false}
           renderItem={({ item }) => (
-            <View style={styles.workerCard}>
+            <View
+              style={[
+                styles.workerCard,
+                !item.active && styles.inactiveWorkerCard,
+              ]}
+            >
+              {!item.active ? (
+                <Text style={styles.inactiveLabel}>Trabajador oculto</Text>
+              ) : null}
+
               <View style={styles.workerHeader}>
                 <View style={styles.workerInfo}>
                   <Text style={styles.workerName}>
@@ -633,15 +657,17 @@ export default function AdminScreen({ navigation }: Props) {
                 </Text>
               </TouchableOpacity>
 
-              <View style={styles.lastRecordBox}>
-                <Text style={styles.type}>
-                  Último fichaje: {formatRecordType(item.last_record?.type)}
-                </Text>
+              {item.last_record ? (
+                <View style={styles.lastRecordBox}>
+                  <Text style={styles.type}>
+                    Último fichaje: {formatRecordType(item.last_record.type)}
+                  </Text>
 
-                <Text style={styles.date}>
-                  {formatDate(item.last_record?.timestamp)}
-                </Text>
-              </View>
+                  <Text style={styles.date}>
+                    {formatDate(item.last_record.timestamp)}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           )}
           ListEmptyComponent={
@@ -779,6 +805,20 @@ const styles = StyleSheet.create({
     color: "#8F8A82",
     fontSize: 13,
     marginBottom: 12,
+  },
+
+
+  inactiveWorkerCard: {
+    opacity: 0.82,
+    borderColor: "#5A2A2A",
+  },
+
+  inactiveLabel: {
+    color: "#FF5C5C",
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 10,
+    textTransform: "uppercase",
   },
 
   workerHeader: {
