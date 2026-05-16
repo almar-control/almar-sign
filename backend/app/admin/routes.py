@@ -113,6 +113,15 @@ async def get_workers():
         workers.append({
             "email": email,
             "name": user.get("name", ""),
+            "surname": user.get("surname", ""),
+            "dni": user.get("dni", ""),
+            "phone": user.get("phone", ""),
+            "address": user.get("address", ""),
+            "social_security_number": user.get("social_security_number", ""),
+            "department": user.get("department", ""),
+            "job_category": user.get("job_category", ""),
+            "base_salary": user.get("base_salary", 0),
+            "iban": user.get("iban", ""),
             "role": user.get("role", ""),
             "active": user.get("active", False),
             "company_id": user.get("company_id", ""),
@@ -484,6 +493,20 @@ async def get_users():
     }
 
 
+class UpdateUserRequest(BaseModel):
+    name: str
+    surname: str = ""
+    dni: str = ""
+    phone: str = ""
+    address: str = ""
+    social_security_number: str = ""
+    department: str = ""
+    job_category: str = ""
+    base_salary: float = 0
+    iban: str = ""
+    password: str = ""
+
+
 class CreateUserRequest(BaseModel):
     email: str
     password: str
@@ -534,6 +557,64 @@ class CreateUserRequest(BaseModel):
 
     vacation_days: float = 0
     sick_leave_days: float = 0
+
+
+@router.patch("/users/{email}")
+async def update_user(email: str, data: UpdateUserRequest):
+    clean_email = email.strip().lower()
+    dni = data.dni.strip().upper().replace(" ", "")
+
+    if not data.name.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Nombre obligatorio"
+        )
+
+    if dni:
+        existing_dni = await db.users.find_one({
+            "dni": dni,
+            "email": {"$ne": clean_email},
+        })
+
+        if existing_dni:
+            raise HTTPException(
+                status_code=409,
+                detail="El DNI/NIE ya existe"
+            )
+
+    update_data = {
+        "name": data.name.strip(),
+        "surname": data.surname.strip(),
+        "dni": dni,
+        "phone": data.phone.strip(),
+        "address": data.address.strip(),
+        "social_security_number": data.social_security_number.strip(),
+        "department": data.department.strip(),
+        "job_category": data.job_category.strip(),
+        "base_salary": data.base_salary,
+        "iban": data.iban.strip(),
+        "updated_at": datetime.utcnow().isoformat(),
+    }
+
+    if data.password.strip():
+        update_data["password"] = data.password.strip()
+
+    result = await db.users.update_one(
+        {"email": clean_email},
+        {"$set": update_data}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Usuario no encontrado"
+        )
+
+    return {
+        "success": True,
+        "email": clean_email,
+        **update_data,
+    }
 
 
 @router.post("/users")

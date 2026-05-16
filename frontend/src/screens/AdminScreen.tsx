@@ -23,6 +23,7 @@ import {
   getCompanyWorkplaceSettings,
   getWorkers,
   updateCompanyWorkplaceSettings,
+  updateUser,
   updateUserActive,
   updateUserContract,
 } from "../api/client";
@@ -47,6 +48,15 @@ type Summary = {
 type WorkerItem = {
   email: string;
   name?: string;
+  surname?: string;
+  dni?: string;
+  phone?: string;
+  address?: string;
+  social_security_number?: string;
+  department?: string;
+  job_category?: string;
+  base_salary?: number;
+  iban?: string;
   active?: boolean;
   hours: number;
   weekly_hours?: number;
@@ -69,6 +79,17 @@ export default function AdminScreen({ navigation }: Props) {
     radius_meters: "",
   });
   const [contractDrafts, setContractDrafts] = useState<Record<string, string>>({});
+  const [editingEmail, setEditingEmail] = useState<string | null>(null);
+  const [editUser, setEditUser] = useState({
+    name: "",
+    surname: "",
+    dni: "",
+    phone: "",
+    department: "",
+    job_category: "",
+    base_salary: "",
+    iban: "",
+  });
   const [newUser, setNewUser] = useState({
     name: "",
     surname: "",
@@ -236,6 +257,51 @@ export default function AdminScreen({ navigation }: Props) {
       );
     } catch (error: any) {
       Alert.alert("Error", error.message || "No se pudo actualizar el estado");
+    }
+  }
+
+
+  function startEditWorker(worker: WorkerItem) {
+    setEditingEmail(worker.email);
+    setEditUser({
+      name: worker.name || "",
+      surname: worker.surname || "",
+      dni: worker.dni || "",
+      phone: worker.phone || "",
+      department: worker.department || "",
+      job_category: worker.job_category || "",
+      base_salary: String(worker.base_salary || ""),
+      iban: worker.iban || "",
+    });
+  }
+
+  function cancelEditWorker() {
+    setEditingEmail(null);
+  }
+
+  async function saveEditWorker() {
+    if (!editingEmail) return;
+
+    try {
+      await updateUser(editingEmail, {
+        name: editUser.name,
+        surname: editUser.surname,
+        dni: editUser.dni,
+        phone: editUser.phone,
+        address: "",
+        social_security_number: "",
+        department: editUser.department,
+        job_category: editUser.job_category,
+        base_salary: Number(editUser.base_salary || 0),
+        iban: editUser.iban,
+        password: "",
+      });
+
+      await loadAdmin();
+      setEditingEmail(null);
+      Alert.alert("Trabajador actualizado");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "No se pudo guardar");
     }
   }
 
@@ -632,6 +698,92 @@ export default function AdminScreen({ navigation }: Props) {
                 </Text>
               </View>
 
+              <TouchableOpacity
+                style={styles.editWorkerButton}
+                onPress={() => startEditWorker(item)}
+              >
+                <Text style={styles.editWorkerButtonText}>Editar trabajador</Text>
+              </TouchableOpacity>
+
+              {editingEmail === item.email ? (
+                <View style={styles.editPanel}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Nombre"
+                    placeholderTextColor="#8F8A82"
+                    value={editUser.name}
+                    onChangeText={(value) => setEditUser({ ...editUser, name: value })}
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Apellidos"
+                    placeholderTextColor="#8F8A82"
+                    value={editUser.surname}
+                    onChangeText={(value) => setEditUser({ ...editUser, surname: value })}
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="DNI / NIE"
+                    placeholderTextColor="#8F8A82"
+                    value={editUser.dni}
+                    onChangeText={(value) => setEditUser({ ...editUser, dni: value })}
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Teléfono"
+                    placeholderTextColor="#8F8A82"
+                    value={editUser.phone}
+                    onChangeText={(value) => setEditUser({ ...editUser, phone: value })}
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Departamento"
+                    placeholderTextColor="#8F8A82"
+                    value={editUser.department}
+                    onChangeText={(value) => setEditUser({ ...editUser, department: value })}
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Categoría"
+                    placeholderTextColor="#8F8A82"
+                    value={editUser.job_category}
+                    onChangeText={(value) => setEditUser({ ...editUser, job_category: value })}
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Salario base"
+                    placeholderTextColor="#8F8A82"
+                    keyboardType="decimal-pad"
+                    value={editUser.base_salary}
+                    onChangeText={(value) =>
+                      setEditUser({ ...editUser, base_salary: value.replace(",", ".") })
+                    }
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="IBAN"
+                    placeholderTextColor="#8F8A82"
+                    value={editUser.iban}
+                    onChangeText={(value) => setEditUser({ ...editUser, iban: value })}
+                  />
+
+                  <TouchableOpacity style={styles.saveButtonFull} onPress={saveEditWorker}>
+                    <Text style={styles.saveButtonText}>Guardar trabajador</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={styles.cancelEditButton} onPress={cancelEditWorker}>
+                    <Text style={styles.cancelEditButtonText}>Cancelar</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+
               <Text style={styles.contract}>Contrato h/semana</Text>
 
               <View style={styles.contractRow}>
@@ -932,6 +1084,43 @@ const styles = StyleSheet.create({
 
   activeToggleButtonText: {
     color: "#F3F0EA",
+    fontWeight: "700",
+  },
+
+  editWorkerButton: {
+    borderColor: "#B07A4F",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    marginBottom: 14,
+  },
+
+  editWorkerButtonText: {
+    color: "#B07A4F",
+    fontWeight: "700",
+  },
+
+  editPanel: {
+    backgroundColor: "#050505",
+    borderColor: "#B07A4F",
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 16,
+  },
+
+  cancelEditButton: {
+    borderColor: "#777",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    alignItems: "center",
+    marginTop: 10,
+  },
+
+  cancelEditButtonText: {
+    color: "#AAA",
     fontWeight: "700",
   },
 

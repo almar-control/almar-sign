@@ -254,3 +254,36 @@ export async function updateCompanyWorkplaceSettings(
 
   return data;
 }
+
+
+export type UpdateUserPayload = {
+  name: string;
+  surname: string;
+  dni: string;
+  phone: string;
+  address: string;
+  social_security_number: string;
+  department: string;
+  job_category: string;
+  base_salary: number;
+  iban: string;
+  password?: string;
+};
+
+export async function updateUser(email: string, payload: UpdateUserPayload) {
+  const response = await fetch(`${API_BASE_URL}/admin/users/${email}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "No se pudo actualizar trabajador");
+  }
+
+  return data;
+}
