@@ -85,6 +85,7 @@ export default function AdminScreen({ navigation }: Props) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [workers, setWorkers] = useState<WorkerItem[]>([]);
   const [activeAdminSection, setActiveAdminSection] = useState("resumen");
+  const [workerPanel, setWorkerPanel] = useState("listado");
   const [records, setRecords] = useState<RecordItem[]>([]);
   const [recordStatusFilter, setRecordStatusFilter] = useState("all");
   const [recordSearch, setRecordSearch] = useState("");
@@ -824,6 +825,42 @@ export default function AdminScreen({ navigation }: Props) {
           <View style={styles.sectionBlock}>
             <SectionHeader title="Trabajadores" />
 
+            <View style={styles.subSectionTabs}>
+              <TouchableOpacity
+                style={[
+                  styles.subSectionTab,
+                  workerPanel === "listado" && styles.subSectionTabActive,
+                ]}
+                onPress={() => setWorkerPanel("listado")}
+              >
+                <Text
+                  style={[
+                    styles.subSectionTabText,
+                    workerPanel === "listado" && styles.subSectionTabTextActive,
+                  ]}
+                >
+                  📋 Listado
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.subSectionTab,
+                  workerPanel === "crear" && styles.subSectionTabActive,
+                ]}
+                onPress={() => setWorkerPanel("crear")}
+              >
+                <Text
+                  style={[
+                    styles.subSectionTabText,
+                    workerPanel === "crear" && styles.subSectionTabTextActive,
+                  ]}
+                >
+                  ➕ Crear
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <Text style={styles.sectionTitle}>Crear trabajador</Text>
 
         <View style={styles.workerCard}>
@@ -1485,6 +1522,38 @@ const styles = StyleSheet.create({
     color: "#B07A4F",
     fontSize: 14,
     fontWeight: "600",
+  },
+
+
+  subSectionTabs: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 20,
+  },
+
+  subSectionTab: {
+    flex: 1,
+    backgroundColor: "#050505",
+    borderColor: "#333",
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+
+  subSectionTabActive: {
+    borderColor: "#1E5EFF",
+    backgroundColor: "#0B1F4D",
+  },
+
+  subSectionTabText: {
+    color: "#8F8A82",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+
+  subSectionTabTextActive: {
+    color: "#FFFFFF",
   },
 
   adminSectionTabs: {
