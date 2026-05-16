@@ -17,7 +17,14 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
-import { createUser, getWorkers, updateUserActive, updateUserContract } from "../api/client";
+import {
+  createUser,
+  getCompanyWorkplaceSettings,
+  getWorkers,
+  updateCompanyWorkplaceSettings,
+  updateUserActive,
+  updateUserContract,
+} from "../api/client";
 
 
 type Props = NativeStackScreenProps<RootStackParamList, "Admin">;
@@ -53,6 +60,13 @@ export default function AdminScreen({ navigation }: Props) {
   const [workers, setWorkers] = useState<WorkerItem[]>([]);
   const [searchText, setSearchText] = useState("");
   const [showInactiveWorkers, setShowInactiveWorkers] = useState(false);
+  const [companySettings, setCompanySettings] = useState({
+    company_name: "",
+    workplace_name: "",
+    latitude: "",
+    longitude: "",
+    radius_meters: "",
+  });
   const [contractDrafts, setContractDrafts] = useState<Record<string, string>>({});
   const [newUser, setNewUser] = useState({
     name: "",
@@ -80,6 +94,16 @@ export default function AdminScreen({ navigation }: Props) {
       const summaryResponse = await fetch(`${API_BASE_URL}/admin/summary`);
       const summaryData = await summaryResponse.json();
 
+      const settingsData = await getCompanyWorkplaceSettings();
+
+      setCompanySettings({
+        company_name: settingsData.company_name || "",
+        workplace_name: settingsData.workplace_name || "",
+        latitude: String(settingsData.latitude || ""),
+        longitude: String(settingsData.longitude || ""),
+        radius_meters: String(settingsData.radius_meters || ""),
+      });
+
       const workersData = await getWorkers();
       const loadedWorkers = (workersData.workers || []).sort(
         (a: WorkerItem, b: WorkerItem) => {
@@ -105,6 +129,44 @@ export default function AdminScreen({ navigation }: Props) {
       Alert.alert("Error", "No se pudo cargar el panel admin");
     } finally {
       setLoading(false);
+    }
+  }
+
+
+  async function saveCompanySettings() {
+    try {
+      const latitude = Number(companySettings.latitude);
+      const longitude = Number(companySettings.longitude);
+      const radiusMeters = Number(companySettings.radius_meters);
+
+      if (!companySettings.company_name.trim() || !companySettings.workplace_name.trim()) {
+        Alert.alert("Empresa", "Empresa y centro son obligatorios");
+        return;
+      }
+
+      if (Number.isNaN(latitude) || Number.isNaN(longitude) || latitude === 0 || longitude === 0) {
+        Alert.alert("GPS", "Latitud y longitud no válidas");
+        return;
+      }
+
+      if (Number.isNaN(radiusMeters) || radiusMeters <= 0) {
+        Alert.alert("GPS", "Radio no válido");
+        return;
+      }
+
+      await updateCompanyWorkplaceSettings({
+        company_name: companySettings.company_name,
+        workplace_name: companySettings.workplace_name,
+        latitude,
+        longitude,
+        radius_meters: radiusMeters,
+      });
+
+      await loadAdmin();
+
+      Alert.alert("Empresa actualizada", "Datos de empresa y centro guardados");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "No se pudo guardar empresa y centro");
     }
   }
 
@@ -272,6 +334,74 @@ export default function AdminScreen({ navigation }: Props) {
         <TouchableOpacity style={styles.exportButton} onPress={openCsvExport}>
           <Text style={styles.exportButtonText}>Exportar CSV</Text>
         </TouchableOpacity>
+
+
+        <Text style={styles.sectionTitle}>Empresa y centro</Text>
+
+        <View style={styles.workerCard}>
+          <TextInput
+            style={styles.input}
+            placeholder="Nombre empresa"
+            placeholderTextColor="#8F8A82"
+            value={companySettings.company_name}
+            onChangeText={(value) =>
+              setCompanySettings({ ...companySettings, company_name: value })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Nombre centro"
+            placeholderTextColor="#8F8A82"
+            value={companySettings.workplace_name}
+            onChangeText={(value) =>
+              setCompanySettings({ ...companySettings, workplace_name: value })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Latitud GPS"
+            placeholderTextColor="#8F8A82"
+            keyboardType="decimal-pad"
+            value={companySettings.latitude}
+            onChangeText={(value) =>
+              setCompanySettings({
+                ...companySettings,
+                latitude: value.replace(",", "."),
+              })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Longitud GPS"
+            placeholderTextColor="#8F8A82"
+            keyboardType="decimal-pad"
+            value={companySettings.longitude}
+            onChangeText={(value) =>
+              setCompanySettings({
+                ...companySettings,
+                longitude: value.replace(",", "."),
+              })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Radio permitido en metros"
+            placeholderTextColor="#8F8A82"
+            keyboardType="number-pad"
+            value={companySettings.radius_meters}
+            onChangeText={(value) =>
+              setCompanySettings({ ...companySettings, radius_meters: value })
+            }
+          />
+
+          <TouchableOpacity style={styles.saveButtonFull} onPress={saveCompanySettings}>
+            <Text style={styles.saveButtonText}>Guardar empresa y centro</Text>
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.sectionTitle}>Crear trabajador</Text>
 

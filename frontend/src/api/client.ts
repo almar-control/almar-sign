@@ -211,3 +211,46 @@ export async function createUser(payload: CreateUserPayload) {
 
   return data;
 }
+
+
+export type CompanyWorkplaceSettings = {
+  company_id: string;
+  company_name: string;
+  workplace_id: string;
+  workplace_name: string;
+  latitude: number;
+  longitude: number;
+  radius_meters: number;
+};
+
+export async function getCompanyWorkplaceSettings() {
+  const response = await fetch(`${API_BASE_URL}/admin/settings/company-workplace`);
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "No se pudo cargar empresa y centro");
+  }
+
+  return data;
+}
+
+export async function updateCompanyWorkplaceSettings(
+  payload: Omit<CompanyWorkplaceSettings, "company_id" | "workplace_id">
+) {
+  const response = await fetch(`${API_BASE_URL}/admin/settings/company-workplace`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "No se pudo actualizar empresa y centro");
+  }
+
+  return data;
+}

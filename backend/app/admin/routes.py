@@ -152,6 +152,89 @@ async def get_admin_summary():
     }
 
 
+@router.get("/settings/company-workplace")
+async def get_company_workplace_settings():
+    company = await db.companies.find_one({"active": True}, sort=[("created_at", 1)])
+
+    if not company:
+        raise HTTPException(status_code=404, detail="Empresa activa no encontrada")
+
+    workplace = await db.workplaces.find_one(
+        {"company_id": str(company["_id"]), "active": True},
+        sort=[("created_at", 1)]
+    )
+
+    if not workplace:
+        raise HTTPException(status_code=404, detail="Centro activo no encontrado")
+
+    return {
+        "company_id": str(company["_id"]),
+        "company_name": company.get("name", ""),
+        "workplace_id": str(workplace["_id"]),
+        "workplace_name": workplace.get("name", ""),
+        "latitude": workplace.get("latitude", 0),
+        "longitude": workplace.get("longitude", 0),
+        "radius_meters": workplace.get("radius_meters", 0),
+    }
+
+
+@router.patch("/settings/company-workplace")
+async def update_company_workplace_settings(data: UpdateCompanyWorkplaceRequest):
+    company = await db.companies.find_one({"active": True}, sort=[("created_at", 1)])
+
+    if not company:
+        raise HTTPException(status_code=404, detail="Empresa activa no encontrada")
+
+    workplace = await db.workplaces.find_one(
+        {"company_id": str(company["_id"]), "active": True},
+        sort=[("created_at", 1)]
+    )
+
+    if not workplace:
+        raise HTTPException(status_code=404, detail="Centro activo no encontrado")
+
+    if not data.company_name.strip() or not data.workplace_name.strip():
+        raise HTTPException(status_code=400, detail="Empresa y centro son obligatorios")
+
+    if data.latitude == 0 or data.longitude == 0:
+        raise HTTPException(status_code=400, detail="GPS inválido")
+
+    if data.radius_meters <= 0:
+        raise HTTPException(status_code=400, detail="Radio GPS inválido")
+
+    now = datetime.utcnow().isoformat()
+
+    await db.companies.update_one(
+        {"_id": company["_id"]},
+        {"$set": {
+            "name": data.company_name.strip(),
+            "updated_at": now,
+        }}
+    )
+
+    await db.workplaces.update_one(
+        {"_id": workplace["_id"]},
+        {"$set": {
+            "name": data.workplace_name.strip(),
+            "latitude": data.latitude,
+            "longitude": data.longitude,
+            "radius_meters": data.radius_meters,
+            "updated_at": now,
+        }}
+    )
+
+    return {
+        "success": True,
+        "company_id": str(company["_id"]),
+        "company_name": data.company_name.strip(),
+        "workplace_id": str(workplace["_id"]),
+        "workplace_name": data.workplace_name.strip(),
+        "latitude": data.latitude,
+        "longitude": data.longitude,
+        "radius_meters": data.radius_meters,
+    }
+
+
 @router.get("/companies")
 async def get_companies():
     cursor = (
@@ -307,6 +390,14 @@ async def create_workplace(data: CreateWorkplaceRequest):
         "name": data.name
     }
 
+
+
+class UpdateCompanyWorkplaceRequest(BaseModel):
+    company_name: str
+    workplace_name: str
+    latitude: float
+    longitude: float
+    radius_meters: int
 
 
 class UpdateUserActiveRequest(BaseModel):
