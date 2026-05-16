@@ -83,6 +83,7 @@ export default function AdminScreen({ navigation }: Props) {
   const [workers, setWorkers] = useState<WorkerItem[]>([]);
   const [records, setRecords] = useState<RecordItem[]>([]);
   const [recordStatusFilter, setRecordStatusFilter] = useState("all");
+  const [recordSearch, setRecordSearch] = useState("");
   const [searchText, setSearchText] = useState("");
   const [showInactiveWorkers, setShowInactiveWorkers] = useState(false);
   const [companySettings, setCompanySettings] = useState({
@@ -452,13 +453,23 @@ export default function AdminScreen({ navigation }: Props) {
       );
     });
 
-  const filteredRecords = records.filter((record) => {
-    if (recordStatusFilter === "all") {
-      return true;
-    }
+  const filteredRecords = records
+    .filter((record) => {
+      if (recordStatusFilter === "all") {
+        return true;
+      }
 
-    return record.status === recordStatusFilter;
-  });
+      return record.status === recordStatusFilter;
+    })
+    .filter((record) => {
+      const query = recordSearch.trim().toLowerCase();
+
+      if (!query) {
+        return true;
+      }
+
+      return record.email.toLowerCase().includes(query);
+    });
 
   async function logout() {
     await AsyncStorage.removeItem("user_email");
@@ -736,6 +747,14 @@ export default function AdminScreen({ navigation }: Props) {
         </View>
 
         <Text style={styles.sectionTitle}>Últimos fichajes</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Buscar trabajador por email"
+          placeholderTextColor="#8F8A82"
+          value={recordSearch}
+          onChangeText={setRecordSearch}
+        />
 
         <View style={styles.recordFilterRow}>
           {["all", "valid", "review", "corrected"].map((status) => (
