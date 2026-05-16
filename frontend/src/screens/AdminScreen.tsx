@@ -81,6 +81,8 @@ type WorkerItem = {
 export default function AdminScreen({ navigation }: Props) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [workers, setWorkers] = useState<WorkerItem[]>([]);
+  const [records, setRecords] = useState<RecordItem[]>([]);
+  const [recordStatusFilter, setRecordStatusFilter] = useState("all");
   const [searchText, setSearchText] = useState("");
   const [showInactiveWorkers, setShowInactiveWorkers] = useState(false);
   const [companySettings, setCompanySettings] = useState({
@@ -144,6 +146,9 @@ export default function AdminScreen({ navigation }: Props) {
         radius_meters: String(settingsData.radius_meters || ""),
       });
 
+      const recordsResponse = await fetch(`${API_BASE_URL}/admin/records`);
+      const recordsData = await recordsResponse.json();
+
       const workersData = await getWorkers();
       const loadedWorkers = (workersData.workers || []).sort(
         (a: WorkerItem, b: WorkerItem) => {
@@ -163,6 +168,7 @@ export default function AdminScreen({ navigation }: Props) {
 
       setSummary(summaryData);
       setWorkers(loadedWorkers);
+      setRecords(recordsData.records || []);
       setContractDrafts(drafts);
     } catch (error) {
       console.log(error);
@@ -446,6 +452,14 @@ export default function AdminScreen({ navigation }: Props) {
       );
     });
 
+  const filteredRecords = records.filter((record) => {
+    if (recordStatusFilter === "all") {
+      return true;
+    }
+
+    return record.status === recordStatusFilter;
+  });
+
   async function logout() {
     await AsyncStorage.removeItem("user_email");
     await AsyncStorage.removeItem("user_role");
@@ -720,6 +734,75 @@ export default function AdminScreen({ navigation }: Props) {
             </Text>
           </TouchableOpacity>
         </View>
+
+        <Text style={styles.sectionTitle}>Últimos fichajes</Text>
+
+        <View style={styles.recordFilterRow}>
+          {["all", "valid", "review", "corrected"].map((status) => (
+            <TouchableOpacity
+              key={status}
+              style={[
+                styles.recordFilterButton,
+                recordStatusFilter === status && styles.recordFilterButtonActive,
+              ]}
+              onPress={() => setRecordStatusFilter(status)}
+            >
+              <Text style={styles.recordFilterText}>
+                {status === "all"
+                  ? "Todos"
+                  : status === "valid"
+                    ? "Válidos"
+                    : status === "review"
+                      ? "Revisar"
+                      : "Corregidos"}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {filteredRecords.slice(0, 30).map((record) => (
+          <View key={record.id} style={styles.recordCard}>
+            <Text style={styles.workerName}>{record.email}</Text>
+
+            <Text style={styles.workerMeta}>
+              {formatRecordType(record.type)} · {formatDate(record.timestamp)}
+            </Text>
+
+            <Text
+              style={[
+                styles.recordStatus,
+                record.status === "valid"
+                  ? styles.recordStatusValid
+                  : styles.recordStatusReview,
+              ]}
+            >
+              {formatRecordStatus(record.status)}
+              {record.status_reason ? ` · ${record.status_reason}` : ""}
+            </Text>
+
+            {record.correction_reason ? (
+              <Text style={styles.recordDistance}>
+                Motivo: {record.correction_reason}
+              </Text>
+            ) : null}
+
+            {record.distance_meters !== undefined && record.distance_meters !== null ? (
+              <Text style={styles.recordDistance}>
+                Distancia: {record.distance_meters} m / radio{" "}
+                {record.allowed_radius_meters ?? "-"} m
+              </Text>
+            ) : null}
+
+            <TouchableOpacity
+              style={styles.correctRecordButton}
+              onPress={() => startCorrectRecord(record)}
+            >
+              <Text style={styles.correctRecordButtonText}>Corregir fichaje</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <Text style={styles.sectionTitle}>Trabajadores</Text>
 
         <FlatList
           data={filteredWorkers}
@@ -1379,6 +1462,42 @@ const styles = StyleSheet.create({
   },
 
 
+
+
+  recordFilterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+
+  recordFilterButton: {
+    borderColor: "#333",
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+
+  recordFilterButtonActive: {
+    backgroundColor: "#24180F",
+    borderColor: "#B07A4F",
+  },
+
+  recordFilterText: {
+    color: "#F3F0EA",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  recordCard: {
+    backgroundColor: "#111",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderColor: "#222",
+    borderWidth: 1,
+  },
 
   correctRecordButton: {
     borderColor: "#FFB020",
