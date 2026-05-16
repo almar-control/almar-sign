@@ -360,6 +360,48 @@ export default function AdminScreen({ navigation }: Props) {
     }
   }
 
+  async function exportFilteredRecordsCsv() {
+    try {
+      const header = [
+        "email",
+        "tipo",
+        "fecha",
+        "estado",
+        "motivo_estado",
+        "distancia_metros",
+        "radio_metros",
+        "motivo_correccion",
+      ];
+
+      const rows = filteredRecords.map((record) => [
+        record.email,
+        formatRecordType(record.type),
+        formatDate(record.timestamp),
+        formatRecordStatus(record.status),
+        record.status_reason || "",
+        record.distance_meters ?? "",
+        record.allowed_radius_meters ?? "",
+        record.correction_reason || "",
+      ]);
+
+      const csv = [header, ...rows]
+        .map((row) =>
+          row
+            .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
+            .join(",")
+        )
+        .join("\n");
+
+      const encoded = encodeURIComponent(csv);
+      const uri = `data:text/csv;charset=utf-8,${encoded}`;
+
+      await Linking.openURL(uri);
+    } catch (error) {
+      console.log(error);
+      Alert.alert("CSV", "No se pudo exportar el CSV filtrado");
+    }
+  }
+
   function formatRecordType(type?: string) {
     if (type === "in") return "ENTRADA";
     if (type === "out") return "SALIDA";
@@ -778,6 +820,15 @@ export default function AdminScreen({ navigation }: Props) {
             </TouchableOpacity>
           ))}
         </View>
+
+        <TouchableOpacity
+          style={styles.exportButton}
+          onPress={exportFilteredRecordsCsv}
+        >
+          <Text style={styles.exportButtonText}>
+            Exportar fichajes filtrados CSV
+          </Text>
+        </TouchableOpacity>
 
         {filteredRecords.slice(0, 30).map((record) => (
           <View key={record.id} style={styles.recordCard}>
