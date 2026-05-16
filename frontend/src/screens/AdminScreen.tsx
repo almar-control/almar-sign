@@ -717,14 +717,16 @@ const styles = StyleSheet.create({
   adminHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    marginBottom: 24,
+    gap: 18,
+    marginBottom: 28,
   },
 
   adminLogo: {
-    width: 72,
-    height: 72,
-    borderRadius: 16,
+    width: 96,
+    height: 96,
+    borderRadius: 20,
+    opacity: 0.92,
+    marginRight: 6,
   },
 
   title: {
