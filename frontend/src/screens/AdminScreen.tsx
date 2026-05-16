@@ -84,6 +84,7 @@ type WorkerItem = {
 export default function AdminScreen({ navigation }: Props) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [workers, setWorkers] = useState<WorkerItem[]>([]);
+  const [activeAdminSection, setActiveAdminSection] = useState("resumen");
   const [records, setRecords] = useState<RecordItem[]>([]);
   const [recordStatusFilter, setRecordStatusFilter] = useState("all");
   const [recordSearch, setRecordSearch] = useState("");
@@ -581,6 +582,25 @@ export default function AdminScreen({ navigation }: Props) {
       return record.email.toLowerCase().includes(query);
     });
 
+  function SectionHeader({ title }: { title: string }) {
+    return (
+      <View style={styles.sectionHeaderCard}>
+        <Image
+          source={require("../../assets/logo_blanco.png")}
+          style={styles.sectionLogo}
+          resizeMode="contain"
+        />
+
+        <View>
+          <Text style={styles.sectionHeaderTitle}>{title}</Text>
+          <Text style={styles.sectionHeaderSubtitle}>
+            {adminIdentity.name} · {adminIdentity.email}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   async function logout() {
     await AsyncStorage.removeItem("user_email");
     await AsyncStorage.removeItem("user_role");
@@ -628,15 +648,57 @@ export default function AdminScreen({ navigation }: Props) {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.exportButton} onPress={openCsvExport}>
+        <View style={styles.adminSectionTabs}>
+          {[
+            ["resumen", "Resumen"],
+            ["trabajadores", "Trabajadores"],
+            ["horas", "Horas"],
+            ["fichajes", "Fichajes"],
+            ["empresa", "Empresa"],
+            ["cuenta", "Cuenta"],
+          ].map(([key, label]) => (
+            <TouchableOpacity
+              key={key}
+              style={[
+                styles.adminSectionTab,
+                activeAdminSection === key && styles.adminSectionTabActive,
+              ]}
+              onPress={() => setActiveAdminSection(key)}
+            >
+              <Text
+                style={[
+                  styles.adminSectionTabText,
+                  activeAdminSection === key && styles.adminSectionTabTextActive,
+                ]}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {activeAdminSection === "resumen" ? (
+          <View style={styles.sectionBlock}>
+            <SectionHeader title="Resumen general" />
+
+            <Text style={styles.sectionHint}>
+              Vista rápida del estado actual de registros, trabajadores y horas.
+            </Text>
+
+            <TouchableOpacity style={styles.exportButton} onPress={openCsvExport}>
           <Text style={styles.exportButtonText}>Exportar CSV</Text>
         </TouchableOpacity>
+          </View>
+        ) : null}
 
+        {activeAdminSection === "cuenta" ? (
+          <View style={styles.sectionBlock}>
+            <SectionHeader title="Cuenta" />
 
-        <TouchableOpacity
-          style={styles.exportButton}
-          onPress={() => setShowPasswordForm(!showPasswordForm)}
-        >
+            <TouchableOpacity
+              style={styles.exportButton}
+              onPress={() => setShowPasswordForm(!showPasswordForm)}
+            >
           <Text style={styles.exportButtonText}>
             {showPasswordForm ? "Cerrar cambio de contraseña" : "Cambiar mi contraseña"}
           </Text>
@@ -681,9 +743,15 @@ export default function AdminScreen({ navigation }: Props) {
             <Text style={styles.saveButtonText}>Guardar nueva contraseña</Text>
           </TouchableOpacity>
         </View>
+            ) : null}
+          </View>
         ) : null}
 
-        <Text style={styles.sectionTitle}>Empresa y centro</Text>
+        {activeAdminSection === "empresa" ? (
+          <View style={styles.sectionBlock}>
+            <SectionHeader title="Empresa y centro" />
+
+            <Text style={styles.sectionTitle}>Empresa y centro</Text>
 
         <View style={styles.workerCard}>
           <TextInput
@@ -749,8 +817,14 @@ export default function AdminScreen({ navigation }: Props) {
             <Text style={styles.saveButtonText}>Guardar empresa y centro</Text>
           </TouchableOpacity>
         </View>
+          </View>
+        ) : null}
 
-        <Text style={styles.sectionTitle}>Crear trabajador</Text>
+        {activeAdminSection === "trabajadores" ? (
+          <View style={styles.sectionBlock}>
+            <SectionHeader title="Trabajadores" />
+
+            <Text style={styles.sectionTitle}>Crear trabajador</Text>
 
         <View style={styles.workerCard}>
           <TextInput
@@ -906,7 +980,14 @@ export default function AdminScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionTitle}>Últimos fichajes</Text>
+          </View>
+        ) : null}
+
+        {activeAdminSection === "fichajes" ? (
+          <View style={styles.sectionBlock}>
+            <SectionHeader title="Fichajes" />
+
+            <Text style={styles.sectionTitle}>Últimos fichajes</Text>
 
         <TextInput
           style={styles.input}
@@ -990,9 +1071,14 @@ export default function AdminScreen({ navigation }: Props) {
           </View>
         ))}
 
-        <Text style={styles.sectionTitle}>Trabajadores</Text>
+          </View>
+        ) : null}
 
-        <FlatList
+        {activeAdminSection === "trabajadores" ? (
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionTitle}>Listado trabajadores</Text>
+
+            <FlatList
           data={filteredWorkers}
           keyExtractor={(item) => item.email}
           scrollEnabled={false}
@@ -1314,6 +1400,37 @@ export default function AdminScreen({ navigation }: Props) {
             <Text style={styles.empty}>No hay trabajadores con fichajes todavía</Text>
           }
         />
+          </View>
+        ) : null}
+
+        {activeAdminSection === "horas" ? (
+          <View style={styles.sectionBlock}>
+            <SectionHeader title="Horas" />
+
+            <Text style={styles.sectionHint}>
+              Resumen preparado para contrato, horas realizadas, pendientes, extras,
+              nocturnas y festivas. Los cálculos actuales ya se muestran dentro de
+              cada trabajador.
+            </Text>
+
+            <View style={styles.hoursGrid}>
+              <View style={styles.hourBox}>
+                <Text style={styles.hourLabel}>Horas totales</Text>
+                <Text style={styles.hourValue}>{summary?.worker_hours ?? 0} h</Text>
+              </View>
+
+              <View style={styles.hourBox}>
+                <Text style={styles.hourLabel}>Activos</Text>
+                <Text style={styles.hourValue}>{workerStats.active}</Text>
+              </View>
+
+              <View style={styles.hourBox}>
+                <Text style={styles.hourLabel}>Inactivos</Text>
+                <Text style={styles.hourValue}>{workerStats.inactive}</Text>
+              </View>
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
 
       <TouchableOpacity
@@ -1368,6 +1485,77 @@ const styles = StyleSheet.create({
     color: "#B07A4F",
     fontSize: 14,
     fontWeight: "600",
+  },
+
+  adminSectionTabs: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 20,
+  },
+
+  adminSectionTab: {
+    borderColor: "#333",
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: "#050505",
+  },
+
+  adminSectionTabActive: {
+    borderColor: "#B07A4F",
+    backgroundColor: "#24180F",
+  },
+
+  adminSectionTabText: {
+    color: "#8F8A82",
+    fontWeight: "700",
+    fontSize: 12,
+  },
+
+  adminSectionTabTextActive: {
+    color: "#F3F0EA",
+  },
+
+  sectionBlock: {
+    marginBottom: 24,
+  },
+
+  sectionHeaderCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#050505",
+    borderColor: "#B07A4F",
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 18,
+  },
+
+  sectionLogo: {
+    width: 48,
+    height: 48,
+  },
+
+  sectionHeaderTitle: {
+    color: "#F3F0EA",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+
+  sectionHeaderSubtitle: {
+    color: "#8F8A82",
+    fontSize: 12,
+    marginTop: 3,
+  },
+
+  sectionHint: {
+    color: "#8F8A82",
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 16,
   },
 
   grid: {
