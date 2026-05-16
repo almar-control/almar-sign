@@ -963,7 +963,7 @@ export default function AdminScreen({ navigation }: Props) {
 
                   <TouchableOpacity
                     style={styles.correctRecordButton}
-                    onPress={() => startCorrectRecord(item.last_record)}
+                    onPress={() => item.last_record && startCorrectRecord(item.last_record)}
                   >
                     <Text style={styles.correctRecordButtonText}>
                       Corregir último fichaje

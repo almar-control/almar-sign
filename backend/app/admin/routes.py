@@ -3,6 +3,7 @@ import csv
 import io
 
 from bson import ObjectId
+from bson.errors import InvalidId
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -169,17 +170,22 @@ async def correct_record(record_id: str, data: CorrectRecordRequest):
         raise HTTPException(status_code=400, detail="Motivo obligatorio")
 
     try:
+        object_id = ObjectId(record_id)
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="ID de fichaje no válido")
+
+    try:
         parsed_timestamp = datetime.fromisoformat(data.timestamp.replace("Z", "+00:00"))
     except ValueError:
         raise HTTPException(status_code=400, detail="Fecha/hora no válida")
 
-    original_record = await db.records.find_one({"_id": ObjectId(record_id)})
+    original_record = await db.records.find_one({"_id": object_id})
 
     if not original_record:
         raise HTTPException(status_code=404, detail="Fichaje no encontrado")
 
     result = await db.records.update_one(
-        {"_id": ObjectId(record_id)},
+        {"_id": object_id},
         {"$set": {
             "type": data.type,
             "timestamp": parsed_timestamp.isoformat(),
