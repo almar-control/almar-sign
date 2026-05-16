@@ -4,6 +4,7 @@ import {
   Alert,
   StyleSheet,
   Text,
+  ScrollView,
   TextInput,
   TouchableOpacity,
   View,
@@ -208,7 +209,11 @@ export default function WorkerHomeScreen({ navigation, route }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title}>Trabajador</Text>
 
       <Text style={styles.user}>{userEmail}</Text>
@@ -317,7 +322,7 @@ export default function WorkerHomeScreen({ navigation, route }: Props) {
       <TouchableOpacity onPress={logout}>
         <Text style={styles.logout}>Volver al login</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -328,6 +333,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
+  contentContainer: {
+    padding: 24,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+
   title: {
     color: "#F3F0EA",
     fontSize: 32,
