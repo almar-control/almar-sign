@@ -4,6 +4,7 @@ import {
   Alert,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -12,7 +13,7 @@ import { getDistance } from "geolib";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { checkIn, checkOut, getGpsSettings, getHours } from "../api/client";
+import { changePassword, checkIn, checkOut, getGpsSettings, getHours } from "../api/client";
 
 type Props = NativeStackScreenProps<RootStackParamList, "WorkerHome">;
 
@@ -32,6 +33,11 @@ export default function WorkerHomeScreen({ navigation, route }: Props) {
   const [zoneStatus, setZoneStatus] = useState<ZoneStatus>("pending");
   const [distance, setDistance] = useState<number | null>(null);
   const [hours, setHours] = useState(0);
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
 
   const userEmail = route.params?.email || "worker@almar.com";
   const userRole = route.params?.role || "worker";
@@ -165,6 +171,36 @@ export default function WorkerHomeScreen({ navigation, route }: Props) {
     }
   }
 
+  async function savePasswordChange() {
+    try {
+      if (!passwordForm.current_password || !passwordForm.new_password) {
+        Alert.alert("Contraseña", "Rellena contraseña actual y nueva");
+        return;
+      }
+
+      if (passwordForm.new_password !== passwordForm.confirm_password) {
+        Alert.alert("Contraseña", "La nueva contraseña no coincide");
+        return;
+      }
+
+      await changePassword({
+        email: userEmail,
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password,
+      });
+
+      setPasswordForm({
+        current_password: "",
+        new_password: "",
+        confirm_password: "",
+      });
+
+      Alert.alert("Contraseña actualizada", "Tu contraseña se ha cambiado correctamente");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "No se pudo cambiar la contraseña");
+    }
+  }
+
   async function logout() {
     await AsyncStorage.removeItem("user_email");
     await AsyncStorage.removeItem("user_role");
@@ -230,6 +266,47 @@ export default function WorkerHomeScreen({ navigation, route }: Props) {
       <TouchableOpacity onPress={() => navigation.navigate("History")}>
         <Text style={styles.link}>Ver historial</Text>
       </TouchableOpacity>
+
+      <View style={styles.card}>
+        <Text style={styles.label}>Cambiar contraseña</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Contraseña actual"
+          placeholderTextColor="#8F8A82"
+          secureTextEntry
+          value={passwordForm.current_password}
+          onChangeText={(value) =>
+            setPasswordForm({ ...passwordForm, current_password: value })
+          }
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Nueva contraseña"
+          placeholderTextColor="#8F8A82"
+          secureTextEntry
+          value={passwordForm.new_password}
+          onChangeText={(value) =>
+            setPasswordForm({ ...passwordForm, new_password: value })
+          }
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Confirmar nueva contraseña"
+          placeholderTextColor="#8F8A82"
+          secureTextEntry
+          value={passwordForm.confirm_password}
+          onChangeText={(value) =>
+            setPasswordForm({ ...passwordForm, confirm_password: value })
+          }
+        />
+
+        <TouchableOpacity style={styles.secondaryButton} onPress={savePasswordChange}>
+          <Text style={styles.secondaryButtonText}>Guardar contraseña</Text>
+        </TouchableOpacity>
+      </View>
 
       {userRole === "admin" ? (
         <TouchableOpacity onPress={() => navigation.navigate("Admin")}>
@@ -323,6 +400,16 @@ const styles = StyleSheet.create({
     color: "#B07A4F",
     fontWeight: "700",
   },
+  input: {
+    backgroundColor: "#111",
+    color: "#F3F0EA",
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 12,
+    borderColor: "#333",
+    borderWidth: 1,
+  },
+
   link: {
     color: "#F3F0EA",
     textAlign: "center",

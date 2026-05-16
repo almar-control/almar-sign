@@ -312,3 +312,28 @@ export async function correctRecord(recordId: string, payload: CorrectRecordPayl
 
   return data;
 }
+
+
+export type ChangePasswordPayload = {
+  email: string;
+  current_password: string;
+  new_password: string;
+};
+
+export async function changePassword(payload: ChangePasswordPayload) {
+  const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.detail || "No se pudo cambiar la contraseña");
+  }
+
+  return data;
+}

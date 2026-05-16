@@ -21,6 +21,7 @@ import * as Sharing from "expo-sharing";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import {
+  changePassword,
   correctRecord,
   createUser,
   getCompanyWorkplaceSettings,
@@ -86,6 +87,11 @@ export default function AdminScreen({ navigation }: Props) {
   const [records, setRecords] = useState<RecordItem[]>([]);
   const [recordStatusFilter, setRecordStatusFilter] = useState("all");
   const [recordSearch, setRecordSearch] = useState("");
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
   const [searchText, setSearchText] = useState("");
   const [showInactiveWorkers, setShowInactiveWorkers] = useState(false);
   const [companySettings, setCompanySettings] = useState({
@@ -351,6 +357,43 @@ export default function AdminScreen({ navigation }: Props) {
     }
   }
 
+  async function savePasswordChange() {
+    try {
+      const adminEmail = await AsyncStorage.getItem("user_email");
+
+      if (!adminEmail) {
+        Alert.alert("Sesión", "No se encontró el usuario actual");
+        return;
+      }
+
+      if (!passwordForm.current_password || !passwordForm.new_password) {
+        Alert.alert("Contraseña", "Rellena contraseña actual y nueva");
+        return;
+      }
+
+      if (passwordForm.new_password !== passwordForm.confirm_password) {
+        Alert.alert("Contraseña", "La nueva contraseña no coincide");
+        return;
+      }
+
+      await changePassword({
+        email: adminEmail,
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password,
+      });
+
+      setPasswordForm({
+        current_password: "",
+        new_password: "",
+        confirm_password: "",
+      });
+
+      Alert.alert("Contraseña actualizada", "Tu contraseña se ha cambiado correctamente");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "No se pudo cambiar la contraseña");
+    }
+  }
+
   async function openCsvExport() {
     const url = `${API_BASE_URL}/admin/export.csv`;
 
@@ -540,7 +583,7 @@ export default function AdminScreen({ navigation }: Props) {
     <View style={styles.container}>
       <View style={styles.adminHeader}>
         <Image
-          source={require("../../assets/logo_negro.png")}
+          source={require("../../assets/logo_blanco.png")}
           style={styles.adminLogo}
           resizeMode="contain"
         />
@@ -573,6 +616,47 @@ export default function AdminScreen({ navigation }: Props) {
           <Text style={styles.exportButtonText}>Exportar CSV</Text>
         </TouchableOpacity>
 
+
+        <Text style={styles.sectionTitle}>Cambiar mi contraseña</Text>
+
+        <View style={styles.workerCard}>
+          <TextInput
+            style={styles.input}
+            placeholder="Contraseña actual"
+            placeholderTextColor="#8F8A82"
+            secureTextEntry
+            value={passwordForm.current_password}
+            onChangeText={(value) =>
+              setPasswordForm({ ...passwordForm, current_password: value })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Nueva contraseña"
+            placeholderTextColor="#8F8A82"
+            secureTextEntry
+            value={passwordForm.new_password}
+            onChangeText={(value) =>
+              setPasswordForm({ ...passwordForm, new_password: value })
+            }
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Confirmar nueva contraseña"
+            placeholderTextColor="#8F8A82"
+            secureTextEntry
+            value={passwordForm.confirm_password}
+            onChangeText={(value) =>
+              setPasswordForm({ ...passwordForm, confirm_password: value })
+            }
+          />
+
+          <TouchableOpacity style={styles.saveButtonFull} onPress={savePasswordChange}>
+            <Text style={styles.saveButtonText}>Guardar nueva contraseña</Text>
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.sectionTitle}>Empresa y centro</Text>
 
