@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import csv
 import io
 
@@ -65,6 +65,94 @@ async def calculate_hours(email: str):
     return round(total_seconds / 3600, 2)
 
 
+def parse_record_datetime(value: str):
+    clean_value = value.replace("Z", "+00:00")
+    parsed = datetime.fromisoformat(clean_value)
+
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+
+    return parsed.astimezone(timezone.utc)
+
+
+def seconds_inside_range(start, end, range_start):
+    if end <= range_start:
+        return 0
+
+    effective_start = max(start, range_start)
+    return max((end - effective_start).total_seconds(), 0)
+
+
+async def calculate_hours_breakdown(email: str, weekly_hours: float = 0):
+    cursor = (
+        db.records
+        .find({"email": email})
+        .sort("created_at", 1)
+    )
+
+    records = []
+
+    async for record in cursor:
+        records.append(record)
+
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = today_start - timedelta(days=today_start.weekday())
+    month_start = today_start.replace(day=1)
+
+    total_seconds = 0
+    today_seconds = 0
+    week_seconds = 0
+    month_seconds = 0
+    current_in = None
+    open_shift = False
+
+    for record in records:
+        record_type = record.get("type")
+        timestamp = record.get("timestamp")
+
+        if not timestamp:
+            continue
+
+        if record_type == "in":
+            current_in = parse_record_datetime(timestamp)
+
+        elif record_type == "out" and current_in:
+            current_out = parse_record_datetime(timestamp)
+
+            if current_out > current_in:
+                total_seconds += (current_out - current_in).total_seconds()
+                today_seconds += seconds_inside_range(current_in, current_out, today_start)
+                week_seconds += seconds_inside_range(current_in, current_out, week_start)
+                month_seconds += seconds_inside_range(current_in, current_out, month_start)
+
+            current_in = None
+
+    if current_in:
+        open_shift = True
+
+        if now > current_in:
+            total_seconds += (now - current_in).total_seconds()
+            today_seconds += seconds_inside_range(current_in, now, today_start)
+            week_seconds += seconds_inside_range(current_in, now, week_start)
+            month_seconds += seconds_inside_range(current_in, now, month_start)
+
+    total_hours = round(total_seconds / 3600, 2)
+    today_hours = round(today_seconds / 3600, 2)
+    week_hours = round(week_seconds / 3600, 2)
+    month_hours = round(month_seconds / 3600, 2)
+    weekly_balance = round(week_hours - float(weekly_hours or 0), 2)
+
+    return {
+        "total_hours": total_hours,
+        "today_hours": today_hours,
+        "week_hours": week_hours,
+        "month_hours": month_hours,
+        "weekly_balance": weekly_balance,
+        "open_shift": open_shift,
+    }
+
+
 @router.get("/records")
 async def get_all_records():
     cursor = (
@@ -128,6 +216,7 @@ async def get_workers():
             "workplace_id": user.get("workplace_id", ""),
             "weekly_hours": user.get("weekly_hours", 0),
             "hours": await calculate_hours(email),
+            **await calculate_hours_breakdown(email, user.get("weekly_hours", 0)),
             "last_record": serialize_record(last_record) if last_record else None
         })
 

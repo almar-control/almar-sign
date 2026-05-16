@@ -59,6 +59,12 @@ type WorkerItem = {
   iban?: string;
   active?: boolean;
   hours: number;
+  total_hours?: number;
+  today_hours?: number;
+  week_hours?: number;
+  month_hours?: number;
+  weekly_balance?: number;
+  open_shift?: boolean;
   weekly_hours?: number;
   role?: string;
   company_id?: string;
@@ -694,9 +700,42 @@ export default function AdminScreen({ navigation }: Props) {
                 </Text>
 
                 <Text style={styles.workerMeta}>
-                  Horas: {item.hours} h
+                  Total: {item.total_hours ?? item.hours} h
                 </Text>
               </View>
+
+              <View style={styles.hoursGrid}>
+                <View style={styles.hourBox}>
+                  <Text style={styles.hourLabel}>Hoy</Text>
+                  <Text style={styles.hourValue}>{item.today_hours ?? 0} h</Text>
+                </View>
+
+                <View style={styles.hourBox}>
+                  <Text style={styles.hourLabel}>Semana</Text>
+                  <Text style={styles.hourValue}>{item.week_hours ?? 0} h</Text>
+                </View>
+
+                <View style={styles.hourBox}>
+                  <Text style={styles.hourLabel}>Mes</Text>
+                  <Text style={styles.hourValue}>{item.month_hours ?? 0} h</Text>
+                </View>
+              </View>
+
+              <Text
+                style={[
+                  styles.weeklyBalance,
+                  (item.weekly_balance ?? 0) >= 0
+                    ? styles.positiveBalance
+                    : styles.negativeBalance,
+                ]}
+              >
+                Balance semanal: {(item.weekly_balance ?? 0) >= 0 ? "+" : ""}
+                {item.weekly_balance ?? 0} h
+              </Text>
+
+              {item.open_shift ? (
+                <Text style={styles.openShift}>Turno abierto ahora</Text>
+              ) : null}
 
               <TouchableOpacity
                 style={styles.editWorkerButton}
@@ -1085,6 +1124,55 @@ const styles = StyleSheet.create({
   activeToggleButtonText: {
     color: "#F3F0EA",
     fontWeight: "700",
+  },
+
+
+  hoursGrid: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+
+  hourBox: {
+    flex: 1,
+    backgroundColor: "#050505",
+    borderRadius: 12,
+    padding: 10,
+    borderColor: "#1F1F1F",
+    borderWidth: 1,
+  },
+
+  hourLabel: {
+    color: "#8F8A82",
+    fontSize: 11,
+    marginBottom: 4,
+  },
+
+  hourValue: {
+    color: "#F3F0EA",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  weeklyBalance: {
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+
+  positiveBalance: {
+    color: "#7ED957",
+  },
+
+  negativeBalance: {
+    color: "#FFB020",
+  },
+
+  openShift: {
+    color: "#7ED957",
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 12,
   },
 
   editWorkerButton: {
