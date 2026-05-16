@@ -16,6 +16,8 @@ import {
 } from "react-native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import {
@@ -392,10 +394,17 @@ export default function AdminScreen({ navigation }: Props) {
         )
         .join("\n");
 
-      const encoded = encodeURIComponent(csv);
-      const uri = `data:text/csv;charset=utf-8,${encoded}`;
+      const file = new FileSystem.File(
+        FileSystem.Paths.cache,
+        `almar_records_${Date.now()}.csv`
+      );
 
-      await Linking.openURL(uri);
+      file.write(csv);
+
+      await Sharing.shareAsync(file.uri, {
+        mimeType: "text/csv",
+        dialogTitle: "Exportar fichajes CSV",
+      });
     } catch (error) {
       console.log(error);
       Alert.alert("CSV", "No se pudo exportar el CSV filtrado");
