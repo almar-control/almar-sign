@@ -252,26 +252,29 @@ export default function WorkerHomeScreen({ navigation, route }: Props) {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.button, zoneStatus !== "inside" && styles.disabledButton]}
+        style={[styles.checkInButton, zoneStatus !== "inside" && styles.disabledButton]}
         onPress={handleCheckIn}
         disabled={loadingRecord}
       >
-        <Text style={styles.buttonText}>Fichar entrada</Text>
+        <Text style={styles.checkInButtonText}>Fichar entrada</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={[
-          styles.secondaryButton,
+          styles.checkOutButton,
           zoneStatus !== "inside" && styles.disabledSecondaryButton,
         ]}
         onPress={handleCheckOut}
         disabled={loadingRecord}
       >
-        <Text style={styles.secondaryButtonText}>Fichar salida</Text>
+        <Text style={styles.checkOutButtonText}>Fichar salida</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate("History")}>
-        <Text style={styles.link}>Ver historial</Text>
+      <TouchableOpacity
+        style={styles.historyButton}
+        onPress={() => navigation.navigate("History")}
+      >
+        <Text style={styles.historyButtonText}>Consultar mis fichajes</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -407,6 +410,46 @@ const styles = StyleSheet.create({
     color: "#0A0A0A",
     fontWeight: "700",
   },
+  checkInButton: {
+    backgroundColor: "#1E5EFF",
+    borderRadius: 14,
+    padding: 16,
+    alignItems: "center",
+    marginBottom: 14,
+  },
+
+  checkInButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+
+  checkOutButton: {
+    backgroundColor: "#B07A4F",
+    borderRadius: 14,
+    padding: 16,
+    alignItems: "center",
+    marginBottom: 14,
+  },
+
+  checkOutButtonText: {
+    color: "#0A0A0A",
+    fontWeight: "700",
+  },
+
+  historyButton: {
+    borderColor: "#B07A4F",
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 16,
+    alignItems: "center",
+    marginBottom: 14,
+  },
+
+  historyButtonText: {
+    color: "#B07A4F",
+    fontWeight: "700",
+  },
+
   secondaryButton: {
     borderColor: "#B07A4F",
     borderWidth: 1,

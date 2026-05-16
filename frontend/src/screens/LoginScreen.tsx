@@ -33,6 +33,7 @@ export default function LoginScreen({ navigation }: Props) {
 
       await AsyncStorage.setItem("user_email", data.email);
       await AsyncStorage.setItem("user_role", data.role);
+      await AsyncStorage.setItem("user_name", data.name || "");
 
       if (data.role === "admin") {
         navigation.replace("Admin");

@@ -87,6 +87,11 @@ export default function AdminScreen({ navigation }: Props) {
   const [records, setRecords] = useState<RecordItem[]>([]);
   const [recordStatusFilter, setRecordStatusFilter] = useState("all");
   const [recordSearch, setRecordSearch] = useState("");
+  const [adminIdentity, setAdminIdentity] = useState({
+    name: "Admin",
+    email: "",
+  });
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     current_password: "",
     new_password: "",
@@ -137,8 +142,19 @@ export default function AdminScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    loadAdminIdentity();
     loadAdmin();
   }, []);
+
+  async function loadAdminIdentity() {
+    const email = await AsyncStorage.getItem("user_email");
+    const name = await AsyncStorage.getItem("user_name");
+
+    setAdminIdentity({
+      name: name || "Admin",
+      email: email || "",
+    });
+  }
 
   async function loadAdmin() {
     try {
@@ -589,8 +605,8 @@ export default function AdminScreen({ navigation }: Props) {
         />
 
         <View>
-          <Text style={styles.title}>Panel admin</Text>
-          <Text style={styles.subtitle}>ALMAR Sign</Text>
+          <Text style={styles.title}>{adminIdentity.name}</Text>
+          <Text style={styles.subtitle}>{adminIdentity.email || "Panel admin"}</Text>
         </View>
       </View>
 
@@ -617,9 +633,17 @@ export default function AdminScreen({ navigation }: Props) {
         </TouchableOpacity>
 
 
-        <Text style={styles.sectionTitle}>Cambiar mi contraseña</Text>
+        <TouchableOpacity
+          style={styles.exportButton}
+          onPress={() => setShowPasswordForm(!showPasswordForm)}
+        >
+          <Text style={styles.exportButtonText}>
+            {showPasswordForm ? "Cerrar cambio de contraseña" : "Cambiar mi contraseña"}
+          </Text>
+        </TouchableOpacity>
 
-        <View style={styles.workerCard}>
+        {showPasswordForm ? (
+          <View style={styles.workerCard}>
           <TextInput
             style={styles.input}
             placeholder="Contraseña actual"
@@ -657,6 +681,7 @@ export default function AdminScreen({ navigation }: Props) {
             <Text style={styles.saveButtonText}>Guardar nueva contraseña</Text>
           </TouchableOpacity>
         </View>
+        ) : null}
 
         <Text style={styles.sectionTitle}>Empresa y centro</Text>
 
