@@ -17,6 +17,7 @@ export type RootStackParamList = {
     | {
         email?: string;
         role?: string;
+        name?: string;
       }
     | undefined;
   History: undefined;

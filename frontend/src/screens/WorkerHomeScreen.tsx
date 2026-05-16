@@ -34,6 +34,7 @@ export default function WorkerHomeScreen({ navigation, route }: Props) {
   const [zoneStatus, setZoneStatus] = useState<ZoneStatus>("pending");
   const [distance, setDistance] = useState<number | null>(null);
   const [hours, setHours] = useState(0);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     current_password: "",
     new_password: "",
@@ -42,6 +43,7 @@ export default function WorkerHomeScreen({ navigation, route }: Props) {
 
   const userEmail = route.params?.email || "worker@almar.com";
   const userRole = route.params?.role || "worker";
+  const userName = route.params?.name || "Trabajador";
 
   useEffect(() => {
     getGps();
@@ -214,7 +216,7 @@ export default function WorkerHomeScreen({ navigation, route }: Props) {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.title}>Trabajador</Text>
+      <Text style={styles.title}>{userName}</Text>
 
       <Text style={styles.user}>{userEmail}</Text>
 
@@ -272,46 +274,57 @@ export default function WorkerHomeScreen({ navigation, route }: Props) {
         <Text style={styles.link}>Ver historial</Text>
       </TouchableOpacity>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Cambiar contraseña</Text>
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={() => setShowPasswordForm(!showPasswordForm)}
+      >
+        <Text style={styles.secondaryButtonText}>
+          {showPasswordForm ? "Cerrar cambio de contraseña" : "Cambiar contraseña"}
+        </Text>
+      </TouchableOpacity>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña actual"
-          placeholderTextColor="#8F8A82"
-          secureTextEntry
-          value={passwordForm.current_password}
-          onChangeText={(value) =>
-            setPasswordForm({ ...passwordForm, current_password: value })
-          }
-        />
+      {showPasswordForm ? (
+        <View style={styles.card}>
+          <Text style={styles.label}>Cambiar contraseña</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Nueva contraseña"
-          placeholderTextColor="#8F8A82"
-          secureTextEntry
-          value={passwordForm.new_password}
-          onChangeText={(value) =>
-            setPasswordForm({ ...passwordForm, new_password: value })
-          }
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Contraseña actual"
+            placeholderTextColor="#8F8A82"
+            secureTextEntry
+            value={passwordForm.current_password}
+            onChangeText={(value) =>
+              setPasswordForm({ ...passwordForm, current_password: value })
+            }
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Confirmar nueva contraseña"
-          placeholderTextColor="#8F8A82"
-          secureTextEntry
-          value={passwordForm.confirm_password}
-          onChangeText={(value) =>
-            setPasswordForm({ ...passwordForm, confirm_password: value })
-          }
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Nueva contraseña"
+            placeholderTextColor="#8F8A82"
+            secureTextEntry
+            value={passwordForm.new_password}
+            onChangeText={(value) =>
+              setPasswordForm({ ...passwordForm, new_password: value })
+            }
+          />
 
-        <TouchableOpacity style={styles.secondaryButton} onPress={savePasswordChange}>
-          <Text style={styles.secondaryButtonText}>Guardar contraseña</Text>
-        </TouchableOpacity>
-      </View>
+          <TextInput
+            style={styles.input}
+            placeholder="Confirmar nueva contraseña"
+            placeholderTextColor="#8F8A82"
+            secureTextEntry
+            value={passwordForm.confirm_password}
+            onChangeText={(value) =>
+              setPasswordForm({ ...passwordForm, confirm_password: value })
+            }
+          />
+
+          <TouchableOpacity style={styles.secondaryButton} onPress={savePasswordChange}>
+            <Text style={styles.secondaryButtonText}>Guardar contraseña</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       {userRole === "admin" ? (
         <TouchableOpacity onPress={() => navigation.navigate("Admin")}>

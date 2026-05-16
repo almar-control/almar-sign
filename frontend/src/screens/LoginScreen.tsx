@@ -42,6 +42,7 @@ export default function LoginScreen({ navigation }: Props) {
       navigation.replace("WorkerHome", {
         email: data.email,
         role: data.role,
+        name: data.name,
       });
     } catch {
       setError("Email o contraseña incorrectos");
